@@ -1,16 +1,26 @@
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import * as path from "node:path";
 import { AI_BLOCK_END, AI_BLOCK_START, removeAiBlocks } from "../ai_markers";
+import { loadConfig } from "../core/config";
 import { chalk, logger } from "../logger";
 
-const WRITEBACK_ROOT = process.env.WRITEBACK_ROOT ?? process.env.OBSIDIAN_VAULT;
-if (!WRITEBACK_ROOT)
-  throw new Error(
-    "Set WRITEBACK_ROOT or OBSIDIAN_VAULT for writeback scripts.",
-  );
+const config = loadConfig();
+const WRITEBACK_ROOT =
+  process.env.WRITEBACK_ROOT ??
+  process.env.OBSIDIAN_VAULT ??
+  config.paths.vault;
+if (!WRITEBACK_ROOT) {
+  throw new Error("Set WRITEBACK_ROOT/OBSIDIAN_VAULT or update config paths.");
+}
 
 const WRITEBACK_ROOT_ABSOLUTE = path.resolve(WRITEBACK_ROOT);
 
+/**
+ * Resolves a user-supplied path relative to the writeback root while preventing directory traversal.
+ *
+ * @param targetPath - Absolute or vault-relative path to a note.
+ * @returns Absolute, normalized path inside the configured writeback root.
+ */
 export function resolveWritablePath(targetPath: string): string {
   const absoluteTarget = path.isAbsolute(targetPath)
     ? path.resolve(targetPath)
@@ -30,6 +40,12 @@ export function resolveWritablePath(targetPath: string): string {
   return absoluteTarget;
 }
 
+/**
+ * Appends or replaces an AI block wrapped in `<!-- AI:BEGIN -->` markers.
+ *
+ * @param targetPath - Relative or absolute path passed by the CLI command.
+ * @param options - Block metadata plus a predicate to replace existing sections.
+ */
 export async function appendAiBlock(
   targetPath: string,
   options: {

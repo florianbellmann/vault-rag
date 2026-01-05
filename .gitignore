@@ -35,3 +35,4 @@ report.[0-9]_.[0-9]_.[0-9]_.[0-9]_.json
 vault_index.sqlite
 vault_index.sqlite-shm
 vault_index.sqlite-wal
+rag.config.yaml

@@ -1,15 +1,15 @@
+import { basename } from "node:path";
 import { stripAiBlocks } from "../ai_markers";
-import { readText } from "../index/util";
-import { chalk, logger } from "../logger";
-import { ollamaGenerate } from "../ollama";
+import { summarizeContent } from "../core/augmentation/writebacks";
+import { loadConfig } from "../core/config";
+import { readMarkdown } from "../core/fs/vault";
+import { parseFrontmatter } from "../core/metadata/frontmatter";
+import { chalk, logger, setLogLevel } from "../logger";
 import { appendAiBlock, resolveWritablePath } from "./writeback";
 
-const OLLAMA_URL = process.env.OLLAMA_URL;
-const CHAT_MODEL = process.env.CHAT_MODEL;
-if (!OLLAMA_URL)
-  throw new Error("Set OLLAMA_URL before running summarize_note.");
-if (!CHAT_MODEL)
-  throw new Error("Set CHAT_MODEL before running summarize_note.");
+const config = loadConfig();
+setLogLevel(config.paths.log_level);
+const OLLAMA_URL = process.env.OLLAMA_URL ?? "http://localhost:11434";
 const MIN_SUMMARY_CHARS = Number(process.env.SUMMARY_MIN_CHARS ?? "200");
 
 async function main() {
@@ -25,7 +25,7 @@ async function main() {
   logger.info(chalk.cyan(`Summarizing note: ${absolutePath}`));
   let noteContent = "";
   try {
-    noteContent = await readText(absolutePath);
+    noteContent = await readMarkdown(absolutePath);
   } catch (error) {
     if ((error as NodeJS.ErrnoException).code === "ENOENT") {
       logger.error(`Note not found: ${absolutePath}`);
@@ -56,28 +56,17 @@ async function main() {
     ),
   );
 
-  const prompt = [
-    "You are an assistant that summarizes Obsidian daily notes.",
-    "Provide two sections:",
-    "1. Summary - bullet points highlighting key facts or events.",
-    "2. Recommendations - actionable suggestions or follow-ups for tomorrow.",
-    "",
-    "Keep it concise (<= 6 bullets per section). Use Markdown bullet lists.",
-    "",
-    "Note content:",
-    "```markdown",
-    cleanedContent,
-    "```",
-    "",
-    "Answer:",
-  ].join("\n");
-
-  const response = await ollamaGenerate(prompt, {
-    ollamaUrl: OLLAMA_URL,
-    model: CHAT_MODEL,
-  });
-  logger.debug("Prompt sent to chat model:");
-  logger.debug(prompt);
+  const { data, body } = parseFrontmatter(cleanedContent);
+  const title =
+    (typeof data.title === "string" && data.title) ||
+    basename(absolutePath).replace(/\.md$/i, "");
+  const response = await summarizeContent(
+    targetArg,
+    title,
+    body.trim() || cleanedContent,
+    config,
+    OLLAMA_URL,
+  );
 
   const timestamp = new Date().toISOString();
   const blockTitle = "AI Summary";

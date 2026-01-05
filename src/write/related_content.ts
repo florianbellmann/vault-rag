@@ -1,27 +1,24 @@
 import * as path from "node:path";
 import { stripAiBlocks } from "../ai_markers";
-import { createVectorStore } from "../db";
-import { readText } from "../index/util";
-import { chalk, logger } from "../logger";
-import { ollamaEmbed } from "../ollama";
+import { generateRelatedContent } from "../core/augmentation/writebacks";
+import { loadConfig } from "../core/config";
+import { OllamaEmbedder } from "../core/embedding";
+import { readMarkdown } from "../core/fs/vault";
+import { createVectorStore } from "../core/store";
+import { chalk, logger, setLogLevel } from "../logger";
 import { rankRelatedFiles } from "./related";
 import { appendAiBlock, resolveWritablePath } from "./writeback";
 
-const OLLAMA_URL = process.env.OLLAMA_URL;
-const EMBED_MODEL = process.env.EMBED_MODEL;
-const DB_PATH = process.env.DB_PATH ?? "./vault_index.sqlite";
-if (!OLLAMA_URL)
-  throw new Error("Set OLLAMA_URL before running related_content.");
-if (!EMBED_MODEL)
-  throw new Error("Set EMBED_MODEL before running related_content.");
+const config = loadConfig();
+setLogLevel(config.paths.log_level);
+const OLLAMA_URL = process.env.OLLAMA_URL ?? "http://localhost:11434";
 const MIN_RELATED_CHARS = Number(process.env.RELATED_MIN_CHARS ?? "200");
 const MAX_RELATED_CHARS = Number(process.env.RELATED_MAX_CHARS ?? "4000");
 const RELATED_TOP_K = Number(process.env.RELATED_TOP_K ?? "5");
-const WRITEBACK_ROOT = process.env.WRITEBACK_ROOT ?? process.env.OBSIDIAN_VAULT;
-if (!WRITEBACK_ROOT)
-  throw new Error(
-    "Set WRITEBACK_ROOT or OBSIDIAN_VAULT so related content can resolve paths.",
-  );
+const WRITEBACK_ROOT =
+  process.env.WRITEBACK_ROOT ??
+  process.env.OBSIDIAN_VAULT ??
+  config.paths.vault;
 
 function toPosixRelative(filePath: string): string {
   const relative = path.relative(WRITEBACK_ROOT, filePath);
@@ -46,7 +43,7 @@ async function main() {
   logger.info(chalk.cyan(`Finding related content for: ${absolutePath}`));
   let noteContent = "";
   try {
-    noteContent = await readText(absolutePath);
+    noteContent = await readMarkdown(absolutePath);
   } catch (error) {
     if ((error as NodeJS.ErrnoException).code === "ENOENT") {
       logger.error(`Note not found: ${absolutePath}`);
@@ -64,22 +61,22 @@ async function main() {
   }
 
   const truncated = sanitized.slice(0, MAX_RELATED_CHARS);
-  const [noteEmbedding] = await ollamaEmbed([truncated], {
-    ollamaUrl: OLLAMA_URL,
-    model: EMBED_MODEL,
-  });
+  const embedder = new OllamaEmbedder(OLLAMA_URL, config.models);
+  const [noteEmbedding] = await embedder.embed([
+    { id: "note", text: truncated },
+  ]);
 
-  const vectorStore = createVectorStore(DB_PATH);
+  const vectorStore = createVectorStore(config.paths.database);
   let candidates = [];
   try {
-    const chunkRecords = vectorStore.getAllChunks();
+    const chunkRecords = vectorStore.listAllChunks();
     if (chunkRecords.length === 0) {
       logger.warn("Vector store is empty; cannot produce related content.");
       process.exit(0);
     }
     const relativePath = toPosixRelative(absolutePath);
     candidates = rankRelatedFiles(
-      noteEmbedding,
+      noteEmbedding.embedding,
       chunkRecords,
       relativePath,
       RELATED_TOP_K,
@@ -94,15 +91,23 @@ async function main() {
   }
 
   const timestamp = new Date().toISOString();
-  const bodyLines = [
-    `Generated: ${timestamp}`,
-    "",
-    ...candidates.map((candidate) => `- ${toWikiLink(candidate.path)}`),
-  ];
-  const body = bodyLines.join("\n");
+  const context = candidates
+    .map(
+      (candidate, index) =>
+        `${index + 1}. ${toWikiLink(candidate.path)} (score ${(
+          candidate.score * 100
+        ).toFixed(1)}%)`,
+    )
+    .join("\n");
+  const body = await generateRelatedContent(
+    path.basename(absolutePath),
+    context,
+    config,
+    OLLAMA_URL,
+  );
   await appendAiBlock(targetArg, {
     title: "AI Related Content",
-    body,
+    body: `Generated: ${timestamp}\n\n${body.trim()}`,
     replaceTitlePredicate: (titleLine) =>
       titleLine.startsWith("AI Related Content"),
   });

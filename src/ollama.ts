@@ -1,7 +1,8 @@
-// Minimal Ollama REST helpers.
 type EmbedResponse = { embeddings: number[][] };
 
-// Calls Ollama's embed endpoint and returns the embeddings array.
+/**
+ * Calls Ollama's embed endpoint and returns normalized vectors.
+ */
 export async function ollamaEmbed(
   inputTexts: string[],
   options: { ollamaUrl: string; model: string },
@@ -23,10 +24,16 @@ export async function ollamaEmbed(
 
 type GenerateResponse = { response: string };
 
-// Calls the generate endpoint for ad-hoc prompting.
+/**
+ * Invokes Ollama's `generate` endpoint with optional sampling controls.
+ */
 export async function ollamaGenerate(
   prompt: string,
-  options: { ollamaUrl: string; model: string },
+  options: {
+    ollamaUrl: string;
+    model: string;
+    options?: Record<string, unknown>;
+  },
 ): Promise<string> {
   const response = await fetch(`${options.ollamaUrl}/api/generate`, {
     method: "POST",
@@ -35,6 +42,7 @@ export async function ollamaGenerate(
       model: options.model,
       prompt,
       stream: false,
+      options: options.options ?? {},
     }),
   });
 

@@ -4,11 +4,11 @@
   "type": "module",
   "private": true,
   "scripts": {
-    "index": "bun run src/index/index_vault.ts",
+    "index": "bun run src/cli/index.ts",
     "reset": "rm vault_index.sqlite*",
     "reindex": "bun run test && bun run reset ; bun run index",
-    "ask": "bun run src/ask.ts",
-    "ask:debug": "DEBUG=1 bun run src/ask.ts",
+    "ask": "bun run src/cli/ask.ts",
+    "ask:debug": "RAG_LOG_LEVEL=debug bun run src/cli/ask.ts",
     "summarize": "bun run src/write/summarize_note.ts",
     "summarize:all": "bun run src/write/summarize_all.ts",
     "tag": "bun run src/write/tag_note.ts",
@@ -21,7 +21,9 @@
     "format": "bunx @biomejs/biome format --write .",
     "check": "bunx @biomejs/biome check .",
     "sum:today": "bash -lc 'echo \"$OBSIDIAN_VAULT/Daily/$(date +%F).md\"'",
-    "test": "bun test"
+    "test": "bun test",
+    "rag:eval": "bun run src/cli/eval.ts",
+    "rag:hygiene": "bun run src/cli/hygiene.ts"
   },
   "dependencies": {
     "chalk": "^5.6.2",

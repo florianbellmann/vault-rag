@@ -2,7 +2,7 @@ import { describe, expect, test } from "bun:test";
 import {
   parseFrontmatter,
   stringifyFrontmatter,
-} from "../src/write/frontmatter";
+} from "../src/core/metadata/frontmatter";
 
 describe("parseFrontmatter", () => {
   test("parses existing frontmatter", () => {

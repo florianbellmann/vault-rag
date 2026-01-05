@@ -1,17 +1,18 @@
 import { writeFile } from "node:fs/promises";
 import { stripAiBlocks } from "../ai_markers";
-import { readText } from "../index/util";
-import { chalk, logger } from "../logger";
-import { ollamaGenerate } from "../ollama";
+import { generateTags } from "../core/augmentation/writebacks";
+import { loadConfig } from "../core/config";
+import { readMarkdown } from "../core/fs/vault";
+import { chalk, logger, setLogLevel } from "../logger";
 import { parseFrontmatter } from "./frontmatter";
-import { extractTagsFromResponse, mergeTagsIntoFrontmatter } from "./tagging";
+import { mergeTagsIntoFrontmatter } from "./tagging";
 import { resolveWritablePath } from "./writeback";
 
-const OLLAMA_URL = process.env.OLLAMA_URL;
-const CHAT_MODEL = process.env.CHAT_MODEL;
-if (!OLLAMA_URL) throw new Error("Set OLLAMA_URL before running tag_note.");
-if (!CHAT_MODEL) throw new Error("Set CHAT_MODEL before running tag_note.");
+const config = loadConfig();
+setLogLevel(config.paths.log_level);
+const OLLAMA_URL = process.env.OLLAMA_URL ?? "http://localhost:11434";
 const MIN_TAG_CHARS = Number(process.env.TAG_MIN_CHARS ?? "120");
+const TAG_LIMIT = Number(process.env.TAG_MAX ?? "6");
 
 async function main() {
   const targetArg = process.argv[2];
@@ -26,7 +27,7 @@ async function main() {
   logger.info(chalk.cyan(`Generating tags for note: ${absolutePath}`));
   let noteContent = "";
   try {
-    noteContent = await readText(absolutePath);
+    noteContent = await readMarkdown(absolutePath);
   } catch (error) {
     if ((error as NodeJS.ErrnoException).code === "ENOENT") {
       logger.error(`Note not found: ${absolutePath}`);
@@ -44,26 +45,13 @@ async function main() {
     process.exit(0);
   }
 
-  const prompt = [
-    "You are helping organize an Obsidian vault.",
-    "Return 3-6 short, universal tags that describe the main themes (e.g., #project-management, #health, #learning, #relationships, #finance, #planning).",
-    "Rules:",
-    "- Respond with a newline-separated list of tags.",
-    "- Each tag must start with '#', be lowercase, and use hyphens for multi-word concepts.",
-    "- Focus on broad concepts that could apply to other notes.",
-    "",
-    "Note content:",
-    "```markdown",
+  const tags = await generateTags(
+    targetArg,
     cleanedContent,
-    "```",
-  ].join("\n");
-
-  const response = await ollamaGenerate(prompt, {
-    ollamaUrl: OLLAMA_URL,
-    model: CHAT_MODEL,
-  });
-
-  const tags = extractTagsFromResponse(response);
+    TAG_LIMIT,
+    config,
+    OLLAMA_URL,
+  );
   if (tags.length === 0) {
     logger.warn("Model returned no usable tags; skipping writeback.");
     process.exit(1);

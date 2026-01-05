@@ -1,4 +1,4 @@
-import type { ChunkRecord } from "../db";
+import type { StoredChunk } from "../core/store";
 import { cosineSimilarity } from "../similarity";
 
 export type RelatedFileScore = { path: string; score: number };
@@ -7,9 +7,17 @@ function normalizePath(input: string): string {
   return input.replace(/\\/g, "/");
 }
 
+/**
+ * Scores files by comparing the provided note embedding against stored chunk embeddings.
+ *
+ * @param noteEmbedding - Embedding vector for the source note.
+ * @param chunkRecords - Indexed chunks pulled from the store.
+ * @param targetPath - Path of the source note (used to exclude itself).
+ * @param topK - Maximum number of related files to return.
+ */
 export function rankRelatedFiles(
   noteEmbedding: number[],
-  chunkRecords: ChunkRecord[],
+  chunkRecords: StoredChunk[],
   targetPath: string,
   topK: number,
 ): RelatedFileScore[] {
@@ -17,7 +25,7 @@ export function rankRelatedFiles(
   const fileScores = new Map<string, number>();
 
   for (const chunk of chunkRecords) {
-    const normalizedPath = normalizePath(chunk.path);
+    const normalizedPath = normalizePath(chunk.filePath);
     if (normalizedPath === normalizedTarget) continue;
     const score = cosineSimilarity(noteEmbedding, chunk.embedding);
     const existing = fileScores.get(normalizedPath);

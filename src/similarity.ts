@@ -1,3 +1,6 @@
+/**
+ * Computes cosine similarity between 2 vectors. Returns 0 when either vector has zero magnitude.
+ */
 export function cosineSimilarity(vectorA: number[], vectorB: number[]): number {
   // dotProduct accumulates the sum of element-wise multiplication.
   let dotProduct = 0;

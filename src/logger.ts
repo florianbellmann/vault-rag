@@ -1,11 +1,14 @@
 import chalkModule from "chalk";
-
-const DEBUG_ENABLED =
-  process.env.DEBUG === "1" ||
-  process.env.DEBUG === "true" ||
-  process.env.DEBUG === "yes";
+import type { LogLevel } from "./core/types";
 
 type ChalkColorizer = (message: string) => string;
+const levelPriority: Record<LogLevel, number> = {
+  debug: 10,
+  info: 20,
+  warn: 30,
+  error: 40,
+};
+let currentLevel: LogLevel = "info";
 
 function formatMessage(
   levelLabel: string,
@@ -32,16 +35,24 @@ function log(
 }
 
 export const logger = {
-  info: (...messages: unknown[]) =>
-    log("INFO", chalkModule.cyan, console.log, messages),
-  warn: (...messages: unknown[]) =>
-    log("WARN", chalkModule.yellow, console.warn, messages),
+  info: (...messages: unknown[]) => {
+    if (levelPriority[currentLevel] > levelPriority.info) return;
+    log("INFO", chalkModule.cyan, console.log, messages);
+  },
+  warn: (...messages: unknown[]) => {
+    if (levelPriority[currentLevel] > levelPriority.warn) return;
+    log("WARN", chalkModule.yellow, console.warn, messages);
+  },
   error: (...messages: unknown[]) =>
     log("ERROR", chalkModule.red, console.error, messages),
   debug: (...messages: unknown[]) => {
-    if (!DEBUG_ENABLED) return;
+    if (levelPriority[currentLevel] > levelPriority.debug) return;
     log("DEBUG", chalkModule.magenta, console.debug, messages);
   },
 };
 
 export { chalkModule as chalk };
+
+export function setLogLevel(level: LogLevel): void {
+  currentLevel = level;
+}

@@ -1,0 +1,98 @@
+# Copy this file to rag.config.yaml and edit the values for your environment.
+version: 1
+
+paths:
+  vault: "./vault" # Absolute or relative path to your Obsidian vault.
+  database: "./vault_index.sqlite" # SQLite file where chunks + embeddings are stored.
+  log_level: "info" # info, debug, warn, error – controls CLI verbosity.
+
+features:
+  hybrid_retrieval: true # Enable vector + lexical fusion.
+  reranking: true # Allow the reranker prompt/model to reorder retrieval results.
+  mmr_diversification: true # Apply Maximum Marginal Relevance to improve context diversity.
+  query_rewriting: true # Generate alternative queries for better recall.
+  iterative_retrieval: true # Ask the model for follow-up search directives when context is thin.
+  summarization: true # Needed for summarize CLI.
+  auto_tagging: true # Needed for tag CLI.
+  related_content_generation: true # Needed for related CLI.
+  vault_hygiene_analysis: true # Enables rag:hygiene scans.
+  evaluation_mode: false # Reserved for future automated eval flows.
+
+models:
+  embedding_model: "nomic-embed-text" # Ollama embedding model name.
+  embedding_dimension: 768 # Expected dimension of the embedding vector (used for compatibility checks).
+  embedding_batch_size: 8 # Number of chunks to embed per HTTP call.
+  llm_model: "llama3" # Default chat model for QA + writebacks.
+  reranker_model: "llama3" # Model used by reranker prompt.
+  query_rewrite_model: "llama3" # Model used to generate alternative queries.
+  hygiene_model: "llama3" # Optional model for hygiene prompts.
+  temperature: 0.2 # Default sampling temperature for LLM calls.
+  max_tokens: 512 # Default max tokens for QA responses.
+
+chunking:
+  target_tokens: 350 # Desired chunk size (~tokens). Soft limit.
+  max_tokens: 900 # Hard cap to avoid huge chunks.
+  min_tokens: 80 # Merge smaller chunks until they reach this size.
+  overlap_tokens: 60 # Overlap between chunks when splitting large sections.
+  merge_small_chunks: true # Merge tiny chunks within the same section.
+  strong_boundaries:
+    hr: true # Horizontal rules force splits.
+    callout: true # Obsidian callouts force splits.
+    list: true # Lists treated as boundaries for better structure.
+    code: true # Fenced code blocks never get split mid-block.
+    table: true # Tables stay intact.
+  metadata_prefix_strategy: "heading_path" # Prepend heading path to embedding representation.
+
+retrieval:
+  vector_top_k: 40 # Number of vector candidates before fusion.
+  lexical_top_k: 30 # Number of lexical candidates before fusion.
+  fusion_strategy: "rrf" # Reciprocal Rank Fusion.
+  fusion_weights:
+    vector: 0.7 # Higher weight favors vector similarity.
+    lexical: 0.3 # Lower weight for lexical (BM25) score.
+  mmr_lambda: 0.65 # Balance between relevance/diversity (0..1).
+  rerank_top_n: 12 # Shortlist passed to reranker/context packing.
+  context_token_budget: 1800 # Approximate context budget for QA prompt.
+  recency_boost: 0.05 # Additional weight for recently modified notes.
+  diversification_pool: 40 # Pool size before MMR selection.
+
+prompts:
+  qa: |
+    You are an assistant grounded in an Obsidian vault.
+    Use ONLY the provided context chunks. If the answer is not present, reply with
+    "I do not have enough information in the vault." Use citations like [C{{index}}] that map to the chunk list.
+    Question: {{question}}
+
+    Retrieved chunks:
+    {{context}}
+
+    Respond with a helpful, citation-backed answer:
+  summarization: |
+    Summarize the note "{{title}}" located at {{path}}.
+    Context:
+    {{context}}
+
+    Produce two sections:
+    1. Recap - actionable summary of the content.
+    2. Recommendations - concrete next steps referencing the note content.
+  tagging: |
+    You are a tagging assistant. Suggest up to {{tag_limit}} universal tags for the note "{{title}}".
+    Base your output on the context below. Return a JSON array of strings.
+    Context:
+    {{context}}
+  related: |
+    You are identifying related content for "{{title}}".
+    Provided chunks:
+    {{context}}
+    Return a bullet list of wiki links to files that should be explored next.
+  reranker: |
+    You rerank chunks for the question "{{question}}".
+    Reorder the following chunks by relevance. Respond with JSON array of chunk ids ordered best to worst.
+    {{chunks}}
+  query_rewrite: |
+    Rewrite the search query "{{question}}" into up to 4 alternative focused queries.
+    Consider entities, synonyms, and related tasks. Return a JSON array of unique strings.
+  iterative_gap: |
+    The following context was retrieved for question "{{question}}":
+    {{context}}
+    What concepts are missing? Respond with up to 3 follow-up search directives as bullet points.
