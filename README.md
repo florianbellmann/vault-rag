@@ -1,5 +1,6 @@
 Vault RAG
 =========
+[![CI](https://github.com/florianbellmann/vault-rag/actions/workflows/ci.yml/badge.svg)](https://github.com/florianbellmann/vault-rag/actions/workflows/ci.yml)
 
 A minimal retrieval-augmented generation pipeline for Obsidian vaults. The indexer walks your Markdown files, chunks them, embeds with Ollama, and stores results in a SQLite-backed vector store. A companion `ask` script embeds questions, scores against stored chunks, and prompts Ollama with the highest-scoring context.
 
