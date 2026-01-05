@@ -1,11 +1,11 @@
 import * as path from "node:path";
 import { stripAiBlocks } from "../ai_markers";
-import { readText } from "../index/util";
-import { ollamaEmbed } from "../ollama";
-import { appendAiBlock, resolveWritablePath } from "./writeback";
 import { createVectorStore } from "../db";
-import { logger, chalk } from "../logger";
+import { readText } from "../index/util";
+import { chalk, logger } from "../logger";
+import { ollamaEmbed } from "../ollama";
 import { rankRelatedFiles } from "./related";
+import { appendAiBlock, resolveWritablePath } from "./writeback";
 
 const OLLAMA_URL = process.env.OLLAMA_URL;
 const EMBED_MODEL = process.env.EMBED_MODEL;

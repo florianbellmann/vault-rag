@@ -1,7 +1,7 @@
-import * as path from "node:path";
 import { mkdir, readFile, writeFile } from "node:fs/promises";
-import { AI_BLOCK_START, AI_BLOCK_END, removeAiBlocks } from "../ai_markers";
-import { logger, chalk } from "../logger";
+import * as path from "node:path";
+import { AI_BLOCK_END, AI_BLOCK_START, removeAiBlocks } from "../ai_markers";
+import { chalk, logger } from "../logger";
 
 const WRITEBACK_ROOT = process.env.WRITEBACK_ROOT ?? process.env.OBSIDIAN_VAULT;
 if (!WRITEBACK_ROOT)

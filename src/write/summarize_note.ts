@@ -1,8 +1,8 @@
 import { stripAiBlocks } from "../ai_markers";
 import { readText } from "../index/util";
+import { chalk, logger } from "../logger";
 import { ollamaGenerate } from "../ollama";
 import { appendAiBlock, resolveWritablePath } from "./writeback";
-import { logger, chalk } from "../logger";
 
 const OLLAMA_URL = process.env.OLLAMA_URL;
 const CHAT_MODEL = process.env.CHAT_MODEL;

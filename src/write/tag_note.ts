@@ -1,11 +1,11 @@
+import { writeFile } from "node:fs/promises";
 import { stripAiBlocks } from "../ai_markers";
 import { readText } from "../index/util";
+import { chalk, logger } from "../logger";
 import { ollamaGenerate } from "../ollama";
-import { resolveWritablePath } from "./writeback";
-import { extractTagsFromResponse, mergeTagsIntoFrontmatter } from "./tagging";
-import { logger, chalk } from "../logger";
 import { parseFrontmatter } from "./frontmatter";
-import { writeFile } from "node:fs/promises";
+import { extractTagsFromResponse, mergeTagsIntoFrontmatter } from "./tagging";
+import { resolveWritablePath } from "./writeback";
 
 const OLLAMA_URL = process.env.OLLAMA_URL;
 const CHAT_MODEL = process.env.CHAT_MODEL;

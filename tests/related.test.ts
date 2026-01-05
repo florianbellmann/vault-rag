@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
-import { rankRelatedFiles } from "../src/write/related";
 import type { ChunkRecord } from "../src/db";
+import { rankRelatedFiles } from "../src/write/related";
 
 const mockChunks: ChunkRecord[] = [
   {

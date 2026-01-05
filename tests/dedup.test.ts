@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
-import { dedupeRankedChunks } from "../src/dedup";
 import type { ChunkRecord } from "../src/db";
+import { dedupeRankedChunks } from "../src/dedup";
 
 const chunk = (overrides: Partial<ChunkRecord>): ChunkRecord => ({
   chunkId: "id",

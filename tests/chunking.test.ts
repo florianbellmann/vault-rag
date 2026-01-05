@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
+import { AI_BLOCK_END, AI_BLOCK_START } from "../src/ai_markers";
 import { makeChunks } from "../src/index/chunking";
-import { AI_BLOCK_START, AI_BLOCK_END } from "../src/ai_markers";
 
 describe("makeChunks", () => {
   test("excludes AI blocks from generated chunks", () => {

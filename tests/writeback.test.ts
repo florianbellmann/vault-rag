@@ -3,11 +3,11 @@ import { mkdtemp, readFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import * as path from "node:path";
 
+type WritebackModule = typeof import("../src/write/writeback");
+
 describe("writeback utilities", () => {
-  let resolveWritablePath: typeof import(
-    "../src/write/writeback",
-  ).resolveWritablePath;
-  let appendAiBlock: typeof import("../src/write/writeback").appendAiBlock;
+  let resolveWritablePath: WritebackModule["resolveWritablePath"];
+  let appendAiBlock: WritebackModule["appendAiBlock"];
   let rootDir: string;
 
   beforeAll(async () => {

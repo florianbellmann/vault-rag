@@ -1,8 +1,8 @@
 import { describe, expect, test } from "bun:test";
 import {
-  normalizeTagCandidate,
   extractTagsFromResponse,
   mergeTagsIntoFrontmatter,
+  normalizeTagCandidate,
 } from "../src/write/tagging";
 
 describe("normalizeTagCandidate", () => {

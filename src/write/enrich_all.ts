@@ -1,7 +1,7 @@
-import { resolveWritablePath } from "./writeback";
-import { iterMarkdownFiles } from "../index/util";
-import { logger, chalk } from "../logger";
 import { execSync } from "node:child_process";
+import { iterMarkdownFiles } from "../index/util";
+import { chalk, logger } from "../logger";
+import { resolveWritablePath } from "./writeback";
 
 async function main() {
   const dirArg = process.argv[2];

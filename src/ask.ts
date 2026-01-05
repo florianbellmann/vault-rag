@@ -1,9 +1,9 @@
 import { createVectorStore } from "./db";
 import type { ChunkRecord } from "./db";
-import { cosineSimilarity } from "./similarity";
-import { ollamaEmbed, ollamaGenerate } from "./ollama";
-import { logger, chalk } from "./logger";
 import { dedupeRankedChunks } from "./dedup";
+import { chalk, logger } from "./logger";
+import { ollamaEmbed, ollamaGenerate } from "./ollama";
+import { cosineSimilarity } from "./similarity";
 
 // Models + storage configuration.
 const OLLAMA_URL = process.env.OLLAMA_URL;

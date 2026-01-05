@@ -1,6 +1,6 @@
 import { createHash } from "node:crypto";
+import { readFile, readdir, stat } from "node:fs/promises";
 import * as path from "node:path";
-import { readdir, stat, readFile } from "node:fs/promises";
 
 const IGNORE_DIRECTORIES = new Set([".obsidian", ".trash", ".git"]);
 

@@ -1,6 +1,6 @@
-import { resolveWritablePath } from "./writeback";
-import { logger, chalk } from "../logger";
 import { execSync } from "node:child_process";
+import { chalk, logger } from "../logger";
+import { resolveWritablePath } from "./writeback";
 
 async function main() {
   const targetArg = process.argv[2];
