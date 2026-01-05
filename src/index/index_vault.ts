@@ -136,13 +136,7 @@ async function main() {
           const heading = batchChunkHeadings[batchIndex];
           const hash = batchChunkHashes[batchIndex];
           const embedding = embeddings[batchIndex];
-          if (
-            !chunkTextValue ||
-            !chunkId ||
-            !heading ||
-            !hash ||
-            !embedding
-          ) {
+          if (!chunkTextValue || !chunkId || !heading || !hash || !embedding) {
             continue;
           }
           chunkRecords.push({

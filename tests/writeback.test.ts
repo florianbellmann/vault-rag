@@ -4,7 +4,9 @@ import { tmpdir } from "node:os";
 import * as path from "node:path";
 
 describe("writeback utilities", () => {
-  let resolveWritablePath: typeof import("../src/write/writeback").resolveWritablePath;
+  let resolveWritablePath: typeof import(
+    "../src/write/writeback",
+  ).resolveWritablePath;
   let appendAiBlock: typeof import("../src/write/writeback").appendAiBlock;
   let rootDir: string;
 
