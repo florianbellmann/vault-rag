@@ -25,6 +25,7 @@ type IndexStats = {
   deletedFiles: number;
   chunksUpserted: number;
   chunksDeleted: number;
+  chunksTotal: number;
 };
 
 async function main() {
@@ -38,6 +39,10 @@ async function main() {
     deletedFiles: 0,
     chunksUpserted: 0,
     chunksDeleted: 0,
+    chunksTotal: Object.values(fileState).reduce(
+      (total, state) => total + state.chunkCount,
+      0,
+    ),
   };
   const startTime = Date.now();
   try {
@@ -68,6 +73,8 @@ async function main() {
 
       const markdown = await readText(absolutePath);
       const chunks = makeChunks(markdown, CHUNK_MAX_CHAR_LENGTH);
+      // Remove the prior chunk count (if any) so we can add the latest count later.
+      stats.chunksTotal -= previousState?.chunkCount ?? 0;
       console.log(
         `${progressLabel} ${chalk.green("Indexing")} ${chalk.bold(
           relativePath,
@@ -151,6 +158,7 @@ async function main() {
         mtime: modifiedTimeSeconds,
         chunkCount: chunks.length,
       });
+      stats.chunksTotal += chunks.length;
     }
 
     // Handle deleted files by removing their lingering chunks.
@@ -170,6 +178,7 @@ async function main() {
       vectorStore.deleteFileState(relativePath);
       stats.deletedFiles++;
       stats.chunksDeleted += staleChunkIds.length;
+      stats.chunksTotal -= staleChunkIds.length;
     }
   } finally {
     vectorStore.close();
@@ -185,6 +194,7 @@ async function main() {
   console.log(`  ${chalk.red("Files removed:")} ${stats.deletedFiles}`);
   console.log(`  ${chalk.green("Chunks upserted:")} ${stats.chunksUpserted}`);
   console.log(`  ${chalk.red("Chunks deleted:")} ${stats.chunksDeleted}`);
+  console.log(`  ${chalk.cyan("Total chunks indexed:")} ${stats.chunksTotal}`);
   console.log(`  ${chalk.cyan("Duration:")} ${durationSeconds}s`);
 }
 
