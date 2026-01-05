@@ -6,8 +6,10 @@ import { logger, chalk } from "../logger";
 
 const OLLAMA_URL = process.env.OLLAMA_URL;
 const CHAT_MODEL = process.env.CHAT_MODEL;
-if (!OLLAMA_URL) throw new Error("Set OLLAMA_URL before running summarize_note.");
-if (!CHAT_MODEL) throw new Error("Set CHAT_MODEL before running summarize_note.");
+if (!OLLAMA_URL)
+  throw new Error("Set OLLAMA_URL before running summarize_note.");
+if (!CHAT_MODEL)
+  throw new Error("Set CHAT_MODEL before running summarize_note.");
 const MIN_SUMMARY_CHARS = Number(process.env.SUMMARY_MIN_CHARS ?? "200");
 
 async function main() {

@@ -16,7 +16,9 @@ const MIN_TAG_CHARS = Number(process.env.TAG_MIN_CHARS ?? "120");
 async function main() {
   const targetArg = process.argv[2];
   if (!targetArg) {
-    logger.error("Usage: bun run src/write/tag_note.ts <relative-or-absolute-path>");
+    logger.error(
+      "Usage: bun run src/write/tag_note.ts <relative-or-absolute-path>",
+    );
     process.exit(2);
   }
 

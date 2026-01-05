@@ -67,9 +67,7 @@ class SqliteVectorStore implements VectorStore {
 
   loadFileState(): FileStateMap {
     const rows = this.database
-      .query(
-        `SELECT path, mtime, chunk_count as chunkCount FROM file_state`,
-      )
+      .query("SELECT path, mtime, chunk_count as chunkCount FROM file_state")
       .all() as Array<{ path: string; mtime: number; chunkCount: number }>;
     const state: FileStateMap = {};
     for (const rowRecord of rows) {
@@ -94,7 +92,7 @@ class SqliteVectorStore implements VectorStore {
   }
 
   deleteFileState(filePath: string): void {
-    this.database.query(`DELETE FROM file_state WHERE path = ?`).run(filePath);
+    this.database.query("DELETE FROM file_state WHERE path = ?").run(filePath);
   }
 
   upsertChunks(chunkRecords: ChunkRecord[]): void {
@@ -124,7 +122,7 @@ class SqliteVectorStore implements VectorStore {
 
   deleteChunksByIds(chunkIds: string[]): void {
     const statement = this.database.query(
-      `DELETE FROM chunks WHERE chunk_id = ?`,
+      "DELETE FROM chunks WHERE chunk_id = ?",
     );
     for (const chunkId of chunkIds) statement.run(chunkId);
   }
@@ -132,7 +130,7 @@ class SqliteVectorStore implements VectorStore {
   getAllChunks(): ChunkRecord[] {
     const rows = this.database
       .query(
-        `SELECT chunk_id, path, chunk_index, heading, mtime, hash, text, embedding_json FROM chunks`,
+        "SELECT chunk_id, path, chunk_index, heading, mtime, hash, text, embedding_json FROM chunks",
       )
       .all() as Array<{
       chunk_id: string;

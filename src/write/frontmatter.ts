@@ -1,7 +1,7 @@
 import { parse as yamlParse, stringify as yamlStringify } from "yaml";
 
 export type ParsedFrontmatter = {
-  data: Record<string, any>;
+  data: Record<string, unknown>;
   body: string;
   hasFrontmatter: boolean;
 };
@@ -37,14 +37,14 @@ export function parseFrontmatter(content: string): ParsedFrontmatter {
   const frontmatterSource = processedFrontmatter.join("\n").trim();
   const data =
     frontmatterSource.length > 0
-      ? (yamlParse(frontmatterSource) as Record<string, any>) ?? {}
+      ? ((yamlParse(frontmatterSource) as Record<string, unknown>) ?? {})
       : {};
   const body = bodyLines.join("\n");
   return { data, body, hasFrontmatter: true };
 }
 
 export function stringifyFrontmatter(
-  data: Record<string, any>,
+  data: Record<string, unknown>,
   body: string,
 ): string {
   const entries = Object.entries(data ?? {});

@@ -7,7 +7,9 @@ import * as path from "node:path";
 async function main() {
   const dirArg = process.argv[2];
   if (!dirArg) {
-    logger.error("Usage: bun run src/write/tag_all.ts <relative-or-absolute-dir>");
+    logger.error(
+      "Usage: bun run src/write/tag_all.ts <relative-or-absolute-dir>",
+    );
     process.exit(2);
   }
 

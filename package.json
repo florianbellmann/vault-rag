@@ -17,6 +17,9 @@
     "related:all": "bun run src/write/related_all.ts",
     "enrich": "bun run src/write/enrich_note.ts",
     "enrich:all": "bun run src/write/enrich_all.ts",
+    "lint": "bunx @biomejs/biome lint .",
+    "format": "bunx @biomejs/biome format --write .",
+    "check": "bunx @biomejs/biome check .",
     "sum:today": "bash -lc 'echo \"$OBSIDIAN_VAULT/Daily/$(date +%F).md\"'",
     "test": "bun test"
   },
@@ -25,7 +28,8 @@
     "yaml": "^2.6.0"
   },
   "devDependencies": {
-    "@types/bun": "latest"
+    "@types/bun": "latest",
+    "@biomejs/biome": "^1.9.3"
   },
   "peerDependencies": {
     "typescript": "^5"

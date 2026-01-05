@@ -16,7 +16,7 @@ function formatMessage(
   const level = colorize(levelLabel.padEnd(5));
   const body = messages
     .map((part) =>
-      part instanceof Error ? part.stack ?? part.message : String(part),
+      part instanceof Error ? (part.stack ?? part.message) : String(part),
     )
     .join(" ");
   return `${timestamp} ${level} ${body}`;
@@ -25,7 +25,7 @@ function formatMessage(
 function log(
   levelLabel: string,
   colorize: ChalkColorizer,
-  consoleMethod: (message?: any, ...optionalParams: any[]) => void,
+  consoleMethod: (message?: unknown, ...optionalParams: unknown[]) => void,
   messages: unknown[],
 ) {
   consoleMethod(formatMessage(levelLabel, colorize, messages));

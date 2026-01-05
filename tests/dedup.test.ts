@@ -17,8 +17,14 @@ const chunk = (overrides: Partial<ChunkRecord>): ChunkRecord => ({
 describe("dedupeRankedChunks", () => {
   test("removes duplicate hashes", () => {
     const entries = [
-      { chunkRecord: chunk({ chunkId: "a", hash: "x", path: "noteA.md" }), score: 0.9 },
-      { chunkRecord: chunk({ chunkId: "b", hash: "x", path: "noteA.md" }), score: 0.8 },
+      {
+        chunkRecord: chunk({ chunkId: "a", hash: "x", path: "noteA.md" }),
+        score: 0.9,
+      },
+      {
+        chunkRecord: chunk({ chunkId: "b", hash: "x", path: "noteA.md" }),
+        score: 0.8,
+      },
     ];
     const result = dedupeRankedChunks(entries, { maxPerPath: 2 });
     expect(result).toHaveLength(1);
@@ -27,9 +33,18 @@ describe("dedupeRankedChunks", () => {
 
   test("limits number of chunks per path", () => {
     const entries = [
-      { chunkRecord: chunk({ chunkId: "a", hash: "x", path: "noteA.md" }), score: 0.9 },
-      { chunkRecord: chunk({ chunkId: "b", hash: "y", path: "noteA.md" }), score: 0.8 },
-      { chunkRecord: chunk({ chunkId: "c", hash: "z", path: "noteB.md" }), score: 0.7 },
+      {
+        chunkRecord: chunk({ chunkId: "a", hash: "x", path: "noteA.md" }),
+        score: 0.9,
+      },
+      {
+        chunkRecord: chunk({ chunkId: "b", hash: "y", path: "noteA.md" }),
+        score: 0.8,
+      },
+      {
+        chunkRecord: chunk({ chunkId: "c", hash: "z", path: "noteB.md" }),
+        score: 0.7,
+      },
     ];
     const result = dedupeRankedChunks(entries, { maxPerPath: 1 });
     expect(result.map((r) => r.chunkRecord.chunkId)).toEqual(["a", "c"]);
@@ -37,8 +52,14 @@ describe("dedupeRankedChunks", () => {
 
   test("defaults to one chunk per path when option omitted", () => {
     const entries = [
-      { chunkRecord: chunk({ chunkId: "a", hash: "x", path: "noteA.md" }), score: 0.9 },
-      { chunkRecord: chunk({ chunkId: "b", hash: "y", path: "noteA.md" }), score: 0.8 },
+      {
+        chunkRecord: chunk({ chunkId: "a", hash: "x", path: "noteA.md" }),
+        score: 0.9,
+      },
+      {
+        chunkRecord: chunk({ chunkId: "b", hash: "y", path: "noteA.md" }),
+        score: 0.8,
+      },
     ];
     const result = dedupeRankedChunks(entries);
     expect(result).toHaveLength(1);

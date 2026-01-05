@@ -13,12 +13,16 @@ async function main() {
   }
 
   const directoryPath = resolveWritablePath(dirArg);
-  logger.info(chalk.cyan(`Generating related content for notes under: ${directoryPath}`));
+  logger.info(
+    chalk.cyan(`Generating related content for notes under: ${directoryPath}`),
+  );
 
   let count = 0;
   for await (const filePath of iterMarkdownFiles(directoryPath)) {
     count++;
-    logger.info(chalk.dim(`Finding related content for note ${count}: ${filePath}`));
+    logger.info(
+      chalk.dim(`Finding related content for note ${count}: ${filePath}`),
+    );
     try {
       execSync(`bun run related "${filePath}"`, { stdio: "inherit" });
     } catch (error) {

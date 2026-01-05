@@ -1,9 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import {
-  AI_BLOCK_START,
-  AI_BLOCK_END,
-  stripAiBlocks,
-} from "../src/ai_markers";
+import { AI_BLOCK_START, AI_BLOCK_END, stripAiBlocks } from "../src/ai_markers";
 
 describe("stripAiBlocks", () => {
   test("removes single AI block", () => {

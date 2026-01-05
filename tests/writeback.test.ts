@@ -4,7 +4,9 @@ import { tmpdir } from "node:os";
 import * as path from "node:path";
 
 describe("writeback utilities", () => {
-  let resolveWritablePath: typeof import("../src/write/writeback").resolveWritablePath;
+  let resolveWritablePath: typeof import(
+    "../src/write/writeback",
+  ).resolveWritablePath;
   let appendAiBlock: typeof import("../src/write/writeback").appendAiBlock;
   let rootDir: string;
 
@@ -38,7 +40,10 @@ describe("writeback utilities", () => {
 
     const absolutePath = resolveWritablePath(target);
     const fileContent = await readFile(absolutePath, "utf8");
-    const blocks = fileContent.trim().split("<!-- AI:BEGIN -->").filter(Boolean);
+    const blocks = fileContent
+      .trim()
+      .split("<!-- AI:BEGIN -->")
+      .filter(Boolean);
     expect(blocks).toHaveLength(2);
     expect(fileContent).toContain("<!-- AI:END -->");
   });

@@ -1,4 +1,5 @@
-import { parseFrontmatter, stringifyFrontmatter, ParsedFrontmatter } from "./frontmatter";
+import { parseFrontmatter, stringifyFrontmatter } from "./frontmatter";
+import type { ParsedFrontmatter } from "./frontmatter";
 
 const DEFAULT_MAX_TAGS = Number(process.env.TAG_MAX ?? "6");
 
@@ -58,10 +59,12 @@ export function mergeTagsIntoFrontmatter(
   const existingTags = normalizeExistingTags(parseResult.data.tags);
   const seen = new Set(existingTags);
   const added: string[] = [];
+  const maxTagsOverall = Math.max(DEFAULT_MAX_TAGS, existingTags.length);
 
   for (const candidate of tagsToAdd) {
     const normalized = normalizeTagCandidate(candidate);
     if (!normalized || seen.has(normalized)) continue;
+    if (existingTags.length >= maxTagsOverall) break;
     existingTags.push(normalized);
     seen.add(normalized);
     added.push(normalized);

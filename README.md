@@ -50,6 +50,8 @@ Scripts
 | `bun run related:all <dir>`     | Add related content for every note        |
 | `bun run enrich <path>`         | Run summarize + tag + related in sequence |
 | `bun run enrich:all <dir>`      | Enrich every note in a folder             |
+| `bun run lint`                  | Run Biome lint checks                     |
+| `bun run format`                | Apply Biome formatting (writes in-place)  |
 
 Environment Variables
 ---------------------

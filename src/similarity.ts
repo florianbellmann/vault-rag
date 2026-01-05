@@ -1,7 +1,4 @@
-export function cosineSimilarity(
-  vectorA: number[],
-  vectorB: number[],
-): number {
+export function cosineSimilarity(vectorA: number[], vectorB: number[]): number {
   // dotProduct accumulates the sum of element-wise multiplication.
   let dotProduct = 0;
   // vectorASquaredMagnitude tracks the squared length of vector A.
@@ -17,8 +14,8 @@ export function cosineSimilarity(
     dimensionIndex++
   ) {
     // valueA/valueB represent the coordinate values in the current dimension.
-    const valueA = vectorA[dimensionIndex]!;
-    const valueB = vectorB[dimensionIndex]!;
+    const valueA = vectorA[dimensionIndex] ?? 0;
+    const valueB = vectorB[dimensionIndex] ?? 0;
     dotProduct += valueA * valueB;
     vectorASquaredMagnitude += valueA * valueA;
     vectorBSquaredMagnitude += valueB * valueB;

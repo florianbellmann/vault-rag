@@ -10,8 +10,10 @@ import { rankRelatedFiles } from "./related";
 const OLLAMA_URL = process.env.OLLAMA_URL;
 const EMBED_MODEL = process.env.EMBED_MODEL;
 const DB_PATH = process.env.DB_PATH ?? "./vault_index.sqlite";
-if (!OLLAMA_URL) throw new Error("Set OLLAMA_URL before running related_content.");
-if (!EMBED_MODEL) throw new Error("Set EMBED_MODEL before running related_content.");
+if (!OLLAMA_URL)
+  throw new Error("Set OLLAMA_URL before running related_content.");
+if (!EMBED_MODEL)
+  throw new Error("Set EMBED_MODEL before running related_content.");
 const MIN_RELATED_CHARS = Number(process.env.RELATED_MIN_CHARS ?? "200");
 const MAX_RELATED_CHARS = Number(process.env.RELATED_MAX_CHARS ?? "4000");
 const RELATED_TOP_K = Number(process.env.RELATED_TOP_K ?? "5");

@@ -1,16 +1,13 @@
 import * as path from "node:path";
 import { mkdir, readFile, writeFile } from "node:fs/promises";
-import {
-  AI_BLOCK_START,
-  AI_BLOCK_END,
-  removeAiBlocks,
-} from "../ai_markers";
+import { AI_BLOCK_START, AI_BLOCK_END, removeAiBlocks } from "../ai_markers";
 import { logger, chalk } from "../logger";
 
-const WRITEBACK_ROOT =
-  process.env.WRITEBACK_ROOT ?? process.env.OBSIDIAN_VAULT;
+const WRITEBACK_ROOT = process.env.WRITEBACK_ROOT ?? process.env.OBSIDIAN_VAULT;
 if (!WRITEBACK_ROOT)
-  throw new Error("Set WRITEBACK_ROOT or OBSIDIAN_VAULT for writeback scripts.");
+  throw new Error(
+    "Set WRITEBACK_ROOT or OBSIDIAN_VAULT for writeback scripts.",
+  );
 
 const WRITEBACK_ROOT_ABSOLUTE = path.resolve(WRITEBACK_ROOT);
 
@@ -29,9 +26,7 @@ export function resolveWritablePath(targetPath: string): string {
       `Refusing to write outside of ${WRITEBACK_ROOT_ABSOLUTE}: ${absoluteTarget}`,
     );
   }
-  logger.debug(
-    `[writeback] Resolved path ${targetPath} -> ${absoluteTarget}`,
-  );
+  logger.debug(`[writeback] Resolved path ${targetPath} -> ${absoluteTarget}`);
   return absoluteTarget;
 }
 

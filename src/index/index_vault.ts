@@ -52,7 +52,8 @@ async function main() {
     }
 
     for (let fileIndex = 0; fileIndex < vaultFiles.length; fileIndex++) {
-      const absolutePath = vaultFiles[fileIndex]!;
+      const absolutePath = vaultFiles[fileIndex];
+      if (!absolutePath) continue;
       const relativePath = path.relative(VAULT_PATH, absolutePath);
       seenFiles.add(relativePath);
       const progressLabel = chalk.cyan(
@@ -87,7 +88,8 @@ async function main() {
       const chunkHashes: string[] = [];
 
       for (let chunkIndex = 0; chunkIndex < chunks.length; chunkIndex++) {
-        const chunk = chunks[chunkIndex]!;
+        const chunk = chunks[chunkIndex];
+        if (!chunk) continue;
         const chunkTextValue = chunk.text;
         chunkTexts.push(chunkTextValue);
         chunkIds.push(`${relativePath}:${chunkIndex}`);
@@ -123,16 +125,37 @@ async function main() {
           model: EMBED_MODEL,
         });
 
-        const chunkRecords = batchChunkTexts.map((chunkTextValue, batchIndex) => ({
-          chunkId: batchChunkIds[batchIndex]!,
-          path: relativePath,
-          chunkIndex: batchStart + batchIndex,
-          heading: batchChunkHeadings[batchIndex]!,
-          mtime: modifiedTimeSeconds,
-          hash: batchChunkHashes[batchIndex]!,
-          text: chunkTextValue,
-          embedding: embeddings[batchIndex]!,
-        }));
+        const chunkRecords = [];
+        for (
+          let batchIndex = 0;
+          batchIndex < batchChunkTexts.length;
+          batchIndex++
+        ) {
+          const chunkTextValue = batchChunkTexts[batchIndex];
+          const chunkId = batchChunkIds[batchIndex];
+          const heading = batchChunkHeadings[batchIndex];
+          const hash = batchChunkHashes[batchIndex];
+          const embedding = embeddings[batchIndex];
+          if (
+            !chunkTextValue ||
+            !chunkId ||
+            !heading ||
+            !hash ||
+            !embedding
+          ) {
+            continue;
+          }
+          chunkRecords.push({
+            chunkId,
+            path: relativePath,
+            chunkIndex: batchStart + batchIndex,
+            heading,
+            mtime: modifiedTimeSeconds,
+            hash,
+            text: chunkTextValue,
+            embedding,
+          });
+        }
         vectorStore.upsertChunks(chunkRecords);
       }
 
@@ -164,7 +187,7 @@ async function main() {
     // Handle deleted files by removing their lingering chunks.
     for (const relativePath of Object.keys(fileState)) {
       if (seenFiles.has(relativePath)) continue;
-      const previousChunkCount = fileState[relativePath]!.chunkCount;
+      const previousChunkCount = fileState[relativePath]?.chunkCount ?? 0;
       logger.info(
         `${chalk.red("Removing")} ${chalk.bold(relativePath)} ${chalk.dim(
           `(${previousChunkCount} chunks)`,
@@ -193,9 +216,7 @@ async function main() {
   logger.info(`  ${chalk.red("Files removed:")} ${stats.deletedFiles}`);
   logger.info(`  ${chalk.green("Chunks upserted:")} ${stats.chunksUpserted}`);
   logger.info(`  ${chalk.red("Chunks deleted:")} ${stats.chunksDeleted}`);
-  logger.info(
-    `  ${chalk.cyan("Total chunks indexed:")} ${stats.chunksTotal}`,
-  );
+  logger.info(`  ${chalk.cyan("Total chunks indexed:")} ${stats.chunksTotal}`);
   logger.info(`  ${chalk.cyan("Duration:")} ${durationSeconds}s`);
 }
 

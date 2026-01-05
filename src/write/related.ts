@@ -1,4 +1,4 @@
-import { ChunkRecord } from "../db";
+import type { ChunkRecord } from "../db";
 import { cosineSimilarity } from "../similarity";
 
 export type RelatedFileScore = { path: string; score: number };
