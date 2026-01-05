@@ -1,3 +1,5 @@
+import { stripAiBlocks } from "./ai_markers";
+
 // Helpers for turning Markdown into bounded-length chunks for embedding.
 export type Chunk = {
   heading: string;
@@ -61,7 +63,8 @@ export function chunkText(text: string, maxChars = 1800): string[] {
 
 // Builds embed-ready chunks by combining headings and bounded content slices.
 export function makeChunks(markdown: string, maxChars = 1800): Chunk[] {
-  const headingSections = splitByHeadings(markdown);
+  const sanitizedMarkdown = stripAiBlocks(markdown);
+  const headingSections = splitByHeadings(sanitizedMarkdown);
   const chunks: Chunk[] = [];
 
   for (const section of headingSections) {

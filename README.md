@@ -41,6 +41,8 @@ Scripts
 | `bun run reset`     | Remove `vault_index.sqlite*` files               |
 | `bun run reindex`   | Reset + index                                    |
 | `bun run ask ...`   | Retrieve + answer a question                     |
+| `bun run ask:debug` | Same as `ask` but prints retrieval/prompt debug  |
+| `bun run summarize <path>` | Append AI summary/recs to a note          |
 
 Environment Variables
 ---------------------
@@ -52,6 +54,8 @@ See `.env.example` for the full list:
 - `EMBED_MODEL`, `CHAT_MODEL`: embedding/chat models to call.
 - `DB_PATH`: location of the SQLite vector-store file.
 - `EMBED_BATCH`, `CHUNK_MAX_CHARS`, `TOP_K`: optional tuning knobs.
+- `WRITEBACK_ROOT`: directory where writeback scripts may modify notes (defaults to `OBSIDIAN_VAULT`).
+- `SUMMARY_MIN_CHARS`: minimum non-AI characters required before summarizing a note (default 200).
 
 Architecture
 ------------
@@ -59,6 +63,21 @@ Architecture
 - `src/index_vault.ts`: main indexer (walk vault → chunk → embed → store).
 - `src/db.ts`: vector-store abstraction + SQLite implementation.
 - `src/ask.ts`: query/QA helper built on the vector store.
+- `src/writeback.ts`: safe write helpers + AI block markers.
+- `src/summarize_note.ts`: uses writeback + chat model to append summaries.
 - `src/chunking.ts`, `src/util.ts`, `src/ollama.ts`, `src/similarity.ts`: shared helpers for chunk generation, file traversal, Ollama calls, and cosine similarity.
 
 The abstraction layer keeps the indexer/question answering logic storage-agnostic, so you can swap in a different vector store (e.g., ChromaDB) later by implementing the same interface.
+
+AI Writebacks
+-------------
+
+`writeback.ts` wraps all note mutations and enforces that generated content is surrounded by:
+
+```
+<!-- AI:BEGIN -->
+...generated block...
+<!-- AI:END -->
+```
+
+`makeChunks` strips every block between those markers before chunking, ensuring summaries/recommendations never get fed back into the retrieval corpus.
