@@ -42,8 +42,14 @@ Scripts
 | `bun run reindex`   | Reset + index                                    |
 | `bun run ask ...`   | Retrieve + answer a question                     |
 | `bun run ask:debug` | Same as `ask` but prints retrieval/prompt debug  |
-| `bun run summarize <path>` | Append AI summary/recs to a note          |
-| `bun run tag <path>`       | Append AI-generated universal tags        |
+| `bun run summarize <path>`      | Append AI summary/recs to a note          |
+| `bun run summarize:all <dir>`   | Run summaries for every note in a folder  |
+| `bun run tag <path>`            | Append AI-generated universal tags        |
+| `bun run tag:all <dir>`         | Tag every note in a folder                |
+| `bun run related <path>`        | Append AI-related content links           |
+| `bun run related:all <dir>`     | Add related content for every note        |
+| `bun run enrich <path>`         | Run summarize + tag + related in sequence |
+| `bun run enrich:all <dir>`      | Enrich every note in a folder             |
 
 Environment Variables
 ---------------------
@@ -59,6 +65,7 @@ See `.env.example` for the full list:
 - `SUMMARY_MIN_CHARS`: minimum non-AI characters required before summarizing a note (default 200).
 - `TAG_MIN_CHARS`: minimum characters before tagging a note (default 120).
 - `TAG_MAX`: maximum number of tags the agent should append (default 6).
+- `RELATED_MIN_CHARS`, `RELATED_MAX_CHARS`, `RELATED_TOP_K`: knobs for related-content writeback (length threshold, embed truncation, and how many links to add).
 
 Architecture
 ------------
@@ -70,6 +77,10 @@ Architecture
 - `src/write/summarize_note.ts`: uses writeback + chat model to append summaries.
 - `src/write/tag_note.ts`: generates universal tags with Ollama and appends them.
 - `src/write/tagging.ts`: helper utilities for parsing/normalizing tag output.
+- `src/write/frontmatter.ts`: YAML helper for editing frontmatter safely.
+- `src/write/related_content.ts`: finds similar files via embeddings and appends an AI-related-content section.
+- `src/write/related.ts`: helper for ranking related files.
+- `src/write/tag_all.ts`, `src/write/summarize_all.ts`, `src/write/related_all.ts`, `src/write/enrich_note.ts`, `src/write/enrich_all.ts`: batch or orchestration scripts for writeback operations.
 - `src/index/chunking.ts`, `src/index/util.ts`, `src/ollama.ts`, `src/similarity.ts`: shared helpers for chunk generation, file traversal, Ollama calls, and cosine similarity.
 
 The abstraction layer keeps the indexer/question answering logic storage-agnostic, so you can swap in a different vector store (e.g., ChromaDB) later by implementing the same interface.
@@ -85,4 +96,4 @@ AI Writebacks
 <!-- AI:END -->
 ```
 
-`makeChunks` strips every block between those markers before chunking, ensuring AI summaries, recommendations, and other generated notes never get fed back into the retrieval corpus. Tagging writes place the normalized tags into frontmatter (`tags:` list) so Obsidian can surface them globally.
+`makeChunks` strips every block between those markers before chunking, ensuring AI summaries, recommendations, related-content sections, and other generated notes never get fed back into the retrieval corpus. Tagging writes place normalized tags into frontmatter (`tags:` list) so Obsidian can surface them globally, while related-content writebacks append a marker-wrapped section of wiki links at the bottom of the file.

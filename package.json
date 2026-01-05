@@ -10,7 +10,13 @@
     "ask": "bun run src/ask.ts",
     "ask:debug": "DEBUG=1 bun run src/ask.ts",
     "summarize": "bun run src/write/summarize_note.ts",
+    "summarize:all": "bun run src/write/summarize_all.ts",
     "tag": "bun run src/write/tag_note.ts",
+    "tag:all": "bun run src/write/tag_all.ts",
+    "related": "bun run src/write/related_content.ts",
+    "related:all": "bun run src/write/related_all.ts",
+    "enrich": "bun run src/write/enrich_note.ts",
+    "enrich:all": "bun run src/write/enrich_all.ts",
     "sum:today": "bash -lc 'echo \"$OBSIDIAN_VAULT/Daily/$(date +%F).md\"'",
     "test": "bun test"
   },
