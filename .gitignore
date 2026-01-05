@@ -32,3 +32,6 @@ report.[0-9]_.[0-9]_.[0-9]_.[0-9]_.json
 
 # Finder (MacOS) folder config
 .DS_Store
+vault_index.sqlite
+vault_index.sqlite-shm
+vault_index.sqlite-wal
