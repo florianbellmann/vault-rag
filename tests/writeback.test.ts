@@ -4,14 +4,14 @@ import { tmpdir } from "node:os";
 import * as path from "node:path";
 
 describe("writeback utilities", () => {
-  let resolveWritablePath: typeof import("../src/writeback").resolveWritablePath;
-  let appendAiBlock: typeof import("../src/writeback").appendAiBlock;
+  let resolveWritablePath: typeof import("../src/write/writeback").resolveWritablePath;
+  let appendAiBlock: typeof import("../src/write/writeback").appendAiBlock;
   let rootDir: string;
 
   beforeAll(async () => {
     rootDir = await mkdtemp(path.join(tmpdir(), "writeback-"));
     process.env.WRITEBACK_ROOT = rootDir;
-    const module = await import("../src/writeback");
+    const module = await import("../src/write/writeback");
     resolveWritablePath = module.resolveWritablePath;
     appendAiBlock = module.appendAiBlock;
   });

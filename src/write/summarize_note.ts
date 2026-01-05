@@ -1,8 +1,8 @@
-import { stripAiBlocks } from "./ai_markers";
-import { readText } from "./util";
-import { ollamaGenerate } from "./ollama";
+import { stripAiBlocks } from "../ai_markers";
+import { readText } from "../index/util";
+import { ollamaGenerate } from "../ollama";
 import { appendAiBlock, resolveWritablePath } from "./writeback";
-import { logger, chalk } from "./logger";
+import { logger, chalk } from "../logger";
 
 const OLLAMA_URL = process.env.OLLAMA_URL;
 const CHAT_MODEL = process.env.CHAT_MODEL;
@@ -14,7 +14,7 @@ async function main() {
   const targetArg = process.argv[2];
   if (!targetArg) {
     logger.error(
-      "Usage: bun run src/summarize_note.ts <relative-or-absolute-path>",
+      "Usage: bun run src/write/summarize_note.ts <relative-or-absolute-path>",
     );
     process.exit(2);
   }

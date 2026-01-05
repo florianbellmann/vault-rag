@@ -4,12 +4,12 @@
   "type": "module",
   "private": true,
   "scripts": {
-    "index": "bun run src/index_vault.ts",
+    "index": "bun run src/index/index_vault.ts",
     "reset": "rm vault_index.sqlite*",
     "reindex": "bun run test && bun run reset ; bun run index",
     "ask": "bun run src/ask.ts",
     "ask:debug": "DEBUG=1 bun run src/ask.ts",
-    "summarize": "bun run src/summarize_note.ts",
+    "summarize": "bun run src/write/summarize_note.ts",
     "sum:today": "bash -lc 'echo \"$OBSIDIAN_VAULT/Daily/$(date +%F).md\"'",
     "test": "bun test"
   },

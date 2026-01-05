@@ -1,4 +1,4 @@
-import { stripAiBlocks } from "./ai_markers";
+import { stripAiBlocks } from "../ai_markers";
 
 // Helpers for turning Markdown into bounded-length chunks for embedding.
 export type Chunk = {

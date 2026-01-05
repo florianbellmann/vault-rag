@@ -60,12 +60,12 @@ See `.env.example` for the full list:
 Architecture
 ------------
 
-- `src/index_vault.ts`: main indexer (walk vault → chunk → embed → store).
+- `src/index/index_vault.ts`: main indexer (walk vault → chunk → embed → store).
 - `src/db.ts`: vector-store abstraction + SQLite implementation.
 - `src/ask.ts`: query/QA helper built on the vector store.
-- `src/writeback.ts`: safe write helpers + AI block markers.
-- `src/summarize_note.ts`: uses writeback + chat model to append summaries.
-- `src/chunking.ts`, `src/util.ts`, `src/ollama.ts`, `src/similarity.ts`: shared helpers for chunk generation, file traversal, Ollama calls, and cosine similarity.
+- `src/write/writeback.ts`: safe write helpers + AI block markers.
+- `src/write/summarize_note.ts`: uses writeback + chat model to append summaries.
+- `src/index/chunking.ts`, `src/index/util.ts`, `src/ollama.ts`, `src/similarity.ts`: shared helpers for chunk generation, file traversal, Ollama calls, and cosine similarity.
 
 The abstraction layer keeps the indexer/question answering logic storage-agnostic, so you can swap in a different vector store (e.g., ChromaDB) later by implementing the same interface.
 

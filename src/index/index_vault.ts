@@ -1,9 +1,9 @@
 import * as path from "node:path";
-import { createVectorStore } from "./db";
+import { createVectorStore } from "../db";
 import { iterMarkdownFiles, readText, sha256, mtimeSeconds } from "./util";
 import { makeChunks } from "./chunking";
-import { ollamaEmbed } from "./ollama";
-import { logger, chalk } from "./logger";
+import { ollamaEmbed } from "../ollama";
+import { logger, chalk } from "../logger";
 
 // Simple indexer that walks an Obsidian vault, embeds Markdown chunks,
 // and writes them into the configured vector store.

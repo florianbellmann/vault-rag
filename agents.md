@@ -3,7 +3,7 @@ Agents
 
 This repo hosts two simple “agents” that cooperate to provide retrieval-augmented answers over an Obsidian vault. Each agent is a standalone script that can be composed in automation (Git hooks, CRON, Zapier, etc.) depending on your workflow.
 
-Indexer Agent (`src/index_vault.ts`)
+Indexer Agent (`src/index/index_vault.ts`)
 ------------------------------------
 
 Responsibilities:
@@ -41,4 +41,4 @@ Extending Agents
 - **New Vector Store**: implement `VectorStore` in `src/db.ts` (e.g., wrap ChromaDB) and point `createVectorStore` to it.
 - **Alternate Embedders/LLMs**: update `src/ollama.ts` or add a new client module. The rest of the system only depends on the `ollamaEmbed` / `ollamaGenerate` signatures.
 - **Pipelining**: Because both agents are plain scripts, you can run the indexer on a schedule and trigger the QA agent via CLI, HTTP wrapper, Raycast command, etc.
-- **Writeback Agents**: `src/writeback.ts` and `src/summarize_note.ts` encapsulate safe note updates. All AI output is wrapped with `<!-- AI:BEGIN --> ... <!-- AI:END -->` markers, which the indexer automatically strips before chunking.
+- **Writeback Agents**: `src/write/writeback.ts` and `src/write/summarize_note.ts` encapsulate safe note updates. All AI output is wrapped with `<!-- AI:BEGIN --> ... <!-- AI:END -->` markers, which the indexer automatically strips before chunking.

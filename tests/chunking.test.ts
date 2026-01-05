@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { makeChunks } from "../src/chunking";
+import { makeChunks } from "../src/index/chunking";
 import { AI_BLOCK_START, AI_BLOCK_END } from "../src/ai_markers";
 
 describe("makeChunks", () => {
