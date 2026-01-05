@@ -1,0 +1,15 @@
+{
+  "name": "vault-rag",
+  "module": "index.ts",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "index": "bun run src/index_vault.ts"
+  },
+  "devDependencies": {
+    "@types/bun": "latest"
+  },
+  "peerDependencies": {
+    "typescript": "^5"
+  }
+}
