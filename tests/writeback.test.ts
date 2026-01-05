@@ -42,4 +42,23 @@ describe("writeback utilities", () => {
     expect(blocks).toHaveLength(2);
     expect(fileContent).toContain("<!-- AI:END -->");
   });
+
+  test("appendAiBlock replaces matching block when predicate provided", async () => {
+    const target = "daily/upsert-note.md";
+    await appendAiBlock(target, {
+      title: "AI Summary",
+      body: "Old body",
+    });
+    await appendAiBlock(target, {
+      title: "AI Summary",
+      body: "New body",
+      replaceTitlePredicate: (title) => title.startsWith("AI Summary"),
+    });
+    const absolutePath = resolveWritablePath(target);
+    const fileContent = await readFile(absolutePath, "utf8");
+    const matchCount = fileContent.match(/AI Summary/g)?.length ?? 0;
+    expect(matchCount).toBe(1);
+    expect(fileContent).toContain("New body");
+    expect(fileContent).not.toContain("Old body");
+  });
 });

@@ -91,13 +91,18 @@ async function main() {
     process.exit(0);
   }
 
-  const body = candidates
-    .map((candidate) => `- ${toWikiLink(candidate.path)}`)
-    .join("\n");
   const timestamp = new Date().toISOString();
+  const bodyLines = [
+    `Generated: ${timestamp}`,
+    "",
+    ...candidates.map((candidate) => `- ${toWikiLink(candidate.path)}`),
+  ];
+  const body = bodyLines.join("\n");
   await appendAiBlock(targetArg, {
-    title: `AI Related Content (${timestamp})`,
+    title: "AI Related Content",
     body,
+    replaceTitlePredicate: (titleLine) =>
+      titleLine.startsWith("AI Related Content"),
   });
   logger.info(
     chalk.green(

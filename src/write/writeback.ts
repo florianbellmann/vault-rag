@@ -1,6 +1,10 @@
 import * as path from "node:path";
 import { mkdir, readFile, writeFile } from "node:fs/promises";
-import { AI_BLOCK_START, AI_BLOCK_END } from "../ai_markers";
+import {
+  AI_BLOCK_START,
+  AI_BLOCK_END,
+  removeAiBlocks,
+} from "../ai_markers";
 import { logger, chalk } from "../logger";
 
 const WRITEBACK_ROOT =
@@ -33,7 +37,11 @@ export function resolveWritablePath(targetPath: string): string {
 
 export async function appendAiBlock(
   targetPath: string,
-  options: { title: string; body: string },
+  options: {
+    title: string;
+    body: string;
+    replaceTitlePredicate?: (titleLine: string) => boolean;
+  },
 ): Promise<string> {
   const absolutePath = resolveWritablePath(targetPath);
   const directoryPath = path.dirname(absolutePath);
@@ -45,6 +53,17 @@ export async function appendAiBlock(
   } catch (error) {
     if ((error as NodeJS.ErrnoException).code !== "ENOENT") throw error;
     logger.debug(`[writeback] Creating new file ${absolutePath}`);
+  }
+  if (options.replaceTitlePredicate) {
+    const result = removeAiBlocks(existing, options.replaceTitlePredicate);
+    if (result.removed > 0) {
+      logger.info(
+        chalk.dim(
+          `[writeback] Removed ${result.removed} existing AI block(s) that matched replace predicate.`,
+        ),
+      );
+    }
+    existing = result.content;
   }
   existing = existing.trimEnd();
 

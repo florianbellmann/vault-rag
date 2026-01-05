@@ -78,11 +78,12 @@ async function main() {
   logger.debug(prompt);
 
   const timestamp = new Date().toISOString();
-  const blockTitle = `AI Summary (${timestamp})`;
+  const blockTitle = "AI Summary";
   logger.info(chalk.cyan("Writing summary block to note..."));
   await appendAiBlock(targetArg, {
     title: blockTitle,
-    body: response.trim(),
+    body: `Generated: ${timestamp}\n\n${response.trim()}`,
+    replaceTitlePredicate: (titleLine) => titleLine.startsWith("AI Summary"),
   });
   logger.info(chalk.green(`Appended AI summary to ${absolutePath}`));
 }

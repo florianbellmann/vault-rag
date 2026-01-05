@@ -3,6 +3,7 @@ import type { ChunkRecord } from "./db";
 import { cosineSimilarity } from "./similarity";
 import { ollamaEmbed, ollamaGenerate } from "./ollama";
 import { logger, chalk } from "./logger";
+import { dedupeRankedChunks } from "./dedup";
 
 // Models + storage configuration.
 const OLLAMA_URL = process.env.OLLAMA_URL;
@@ -11,6 +12,9 @@ const CHAT_MODEL = process.env.CHAT_MODEL;
 const DB_PATH = process.env.DB_PATH ?? "./vault_index.sqlite";
 
 const TOP_RESULT_COUNT = Number(process.env.TOP_K ?? "8");
+const MAX_CHUNKS_PER_PATH = Number(
+  process.env.RETRIEVAL_MAX_CHUNKS_PER_NOTE ?? "1",
+);
 
 async function main() {
   const question = process.argv.slice(2).join(" ").trim();
@@ -42,15 +46,21 @@ async function main() {
 
   scoredChunks.sort((left, right) => right.score - left.score);
   const topChunks = scoredChunks.slice(0, TOP_RESULT_COUNT);
+  const dedupedChunks = dedupeRankedChunks(topChunks, {
+    maxPerPath: MAX_CHUNKS_PER_PATH,
+  });
+  logger.debug(
+    `[ask] Deduplicated results: kept ${dedupedChunks.length}/${topChunks.length}`,
+  );
   logger.debug("[ask] Top candidates by cosine similarity:");
-  for (const [index, entry] of topChunks.entries()) {
+  for (const [index, entry] of dedupedChunks.entries()) {
     const percentScore = (entry.score * 100).toFixed(2);
     logger.debug(
       `  ${index + 1}. ${entry.chunkRecord.path} (${entry.chunkRecord.heading}) -> ${percentScore}%`,
     );
   }
 
-  const contextBlocks = topChunks.map(
+  const contextBlocks = dedupedChunks.map(
     ({ chunkRecord }, contextIndex) =>
       `(${contextIndex + 1}) [${chunkRecord.path} | ${chunkRecord.heading}]\n${
         chunkRecord.text
@@ -84,7 +94,7 @@ async function main() {
   logger.info(chalk.white(answer.trim()));
   logger.info(chalk.bold("Sources:"));
   const uniqueSourcePaths = [
-    ...new Set(topChunks.map((entry) => entry.chunkRecord.path)),
+    ...new Set(dedupedChunks.map((entry) => entry.chunkRecord.path)),
   ];
   for (const sourcePath of uniqueSourcePaths) {
     logger.info(chalk.dim(`- ${sourcePath}`));

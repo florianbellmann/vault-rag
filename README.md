@@ -66,6 +66,7 @@ See `.env.example` for the full list:
 - `TAG_MIN_CHARS`: minimum characters before tagging a note (default 120).
 - `TAG_MAX`: maximum number of tags the agent should append (default 6).
 - `RELATED_MIN_CHARS`, `RELATED_MAX_CHARS`, `RELATED_TOP_K`: knobs for related-content writeback (length threshold, embed truncation, and how many links to add).
+- `RETRIEVAL_MAX_CHUNKS_PER_NOTE`: cap on how many chunks per note can appear in QA context (default 1).
 
 Architecture
 ------------
@@ -96,4 +97,4 @@ AI Writebacks
 <!-- AI:END -->
 ```
 
-`makeChunks` strips every block between those markers before chunking, ensuring AI summaries, recommendations, related-content sections, and other generated notes never get fed back into the retrieval corpus. Tagging writes place normalized tags into frontmatter (`tags:` list) so Obsidian can surface them globally, while related-content writebacks append a marker-wrapped section of wiki links at the bottom of the file.
+`makeChunks` strips every block between those markers before chunking, ensuring AI summaries, recommendations, related-content sections, and other generated notes never get fed back into the retrieval corpus. Tagging writes place normalized tags into frontmatter (`tags:` list) so Obsidian can surface them globally, while related-content writebacks append a marker-wrapped section of wiki links at the bottom of the file. Retrieval deduplicates context after scoring: duplicate hashes are discarded and no more than `RETRIEVAL_MAX_CHUNKS_PER_NOTE` chunks from a single note are sent to the LLM to avoid repetition noise.
