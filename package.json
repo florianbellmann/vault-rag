@@ -4,7 +4,13 @@
   "type": "module",
   "private": true,
   "scripts": {
-    "index": "bun run src/index_vault.ts"
+    "index": "bun run src/index_vault.ts",
+    "reset": "rm vault_index.sqlite*",
+    "reindex": "bun run reset ; bun run index",
+    "ask": "bun run src/ask.ts"
+  },
+  "dependencies": {
+    "chalk": "^5.6.2"
   },
   "devDependencies": {
     "@types/bun": "latest"

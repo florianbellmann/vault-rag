@@ -2,38 +2,40 @@ import { createHash } from "node:crypto";
 import * as path from "node:path";
 import { readdir, stat, readFile } from "node:fs/promises";
 
-const IGNORE_DIRS = new Set([".obsidian", ".trash", ".git"]);
+const IGNORE_DIRECTORIES = new Set([".obsidian", ".trash", ".git"]);
 
 // Recursively walks the vault and yields markdown file paths.
-export async function* iterMarkdownFiles(root: string): AsyncGenerator<string> {
-  async function* walk(dir: string): AsyncGenerator<string> {
-    const entries = await readdir(dir, { withFileTypes: true });
-    for (const e of entries) {
-      const full = path.join(dir, e.name);
-      if (e.isDirectory()) {
-        if (IGNORE_DIRS.has(e.name)) continue;
-        yield* walk(full);
-      } else if (e.isFile() && e.name.toLowerCase().endsWith(".md")) {
-        yield full;
+export async function* iterMarkdownFiles(
+  rootDirectory: string,
+): AsyncGenerator<string> {
+  async function* walk(directory: string): AsyncGenerator<string> {
+    const directoryEntries = await readdir(directory, { withFileTypes: true });
+    for (const entry of directoryEntries) {
+      const fullPath = path.join(directory, entry.name);
+      if (entry.isDirectory()) {
+        if (IGNORE_DIRECTORIES.has(entry.name)) continue;
+        yield* walk(fullPath);
+      } else if (entry.isFile() && entry.name.toLowerCase().endsWith(".md")) {
+        yield fullPath;
       }
     }
   }
-  yield* walk(root);
+  yield* walk(rootDirectory);
 }
 
 // Reads a UTF-8 text file.
 export async function readText(filePath: string): Promise<string> {
-  const buf = await readFile(filePath);
-  return buf.toString("utf-8");
+  const fileBuffer = await readFile(filePath);
+  return fileBuffer.toString("utf-8");
 }
 
 // Creates a hex sha256 of the provided string.
-export function sha256(s: string): string {
-  return createHash("sha256").update(s, "utf8").digest("hex");
+export function sha256(content: string): string {
+  return createHash("sha256").update(content, "utf8").digest("hex");
 }
 
 // Returns the file's mtime in seconds (easier to compare than ms).
 export async function mtimeSeconds(filePath: string): Promise<number> {
-  const st = await stat(filePath);
-  return Math.floor(st.mtimeMs / 1000);
+  const fileStats = await stat(filePath);
+  return Math.floor(fileStats.mtimeMs / 1000);
 }

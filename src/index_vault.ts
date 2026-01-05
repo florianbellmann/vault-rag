@@ -1,4 +1,5 @@
 import * as path from "node:path";
+import chalk from "chalk";
 import { createVectorStore } from "./db";
 import { iterMarkdownFiles, readText, sha256, mtimeSeconds } from "./util";
 import { makeChunks } from "./chunking";
@@ -7,15 +8,16 @@ import { ollamaEmbed } from "./ollama";
 // Simple indexer that walks an Obsidian vault, embeds Markdown chunks,
 // and writes them into the configured vector store.
 
-const VAULT = process.env.OBSIDIAN_VAULT;
-if (!VAULT) throw new Error("Set OBSIDIAN_VAULT env var to your vault path.");
+const VAULT_PATH = process.env.OBSIDIAN_VAULT;
+if (!VAULT_PATH)
+  throw new Error("Set OBSIDIAN_VAULT env var to your vault path.");
 
 const OLLAMA_URL = process.env.OLLAMA_URL;
 const EMBED_MODEL = process.env.EMBED_MODEL;
 const DB_PATH = process.env.DB_PATH ?? "./vault_index.sqlite";
 
-const BATCH = Number(process.env.EMBED_BATCH ?? "32");
-const MAX_CHARS = Number(process.env.CHUNK_MAX_CHARS ?? "1800");
+const EMBED_BATCH_SIZE = Number(process.env.EMBED_BATCH ?? "32");
+const CHUNK_MAX_CHAR_LENGTH = Number(process.env.CHUNK_MAX_CHARS ?? "1800");
 
 type IndexStats = {
   processedFiles: number;
@@ -26,10 +28,9 @@ type IndexStats = {
 };
 
 async function main() {
-  const store = createVectorStore(DB_PATH);
-  const state = store.loadFileState();
-
-  const seen = new Set<string>();
+  const vectorStore = createVectorStore(DB_PATH);
+  const fileState = vectorStore.loadFileState();
+  const seenFiles = new Set<string>();
   // Basic counters so we can print a useful summary report.
   const stats: IndexStats = {
     processedFiles: 0,
@@ -38,106 +39,156 @@ async function main() {
     chunksUpserted: 0,
     chunksDeleted: 0,
   };
-  const start = Date.now();
-
+  const startTime = Date.now();
   try {
-    for await (const absPath of iterMarkdownFiles(VAULT)) {
-      const rel = path.relative(VAULT, absPath);
-      seen.add(rel);
+    const vaultFiles: string[] = [];
+    for await (const absolutePath of iterMarkdownFiles(VAULT_PATH)) {
+      vaultFiles.push(absolutePath);
+    }
 
-      const mtime = await mtimeSeconds(absPath);
-      const prev = state[rel];
-      if (prev && prev.mtime === mtime) {
+    for (let fileIndex = 0; fileIndex < vaultFiles.length; fileIndex++) {
+      const absolutePath = vaultFiles[fileIndex]!;
+      const relativePath = path.relative(VAULT_PATH, absolutePath);
+      seenFiles.add(relativePath);
+      const progressLabel = chalk.cyan(
+        `[${fileIndex + 1}/${vaultFiles.length}]`,
+      );
+
+      const modifiedTimeSeconds = await mtimeSeconds(absolutePath);
+      const previousState = fileState[relativePath];
+      if (previousState && previousState.mtime === modifiedTimeSeconds) {
         stats.skippedFiles++;
+        console.log(
+          `${progressLabel} ${chalk.yellow("Skipping")} ${chalk.dim(
+            relativePath,
+          )} (unchanged)`,
+        );
         continue;
       }
 
-      const md = await readText(absPath);
-      const chunks = makeChunks(md, MAX_CHARS);
-      console.log(`Processing ${rel} (${chunks.length} chunks)...`);
+      const markdown = await readText(absolutePath);
+      const chunks = makeChunks(markdown, CHUNK_MAX_CHAR_LENGTH);
+      console.log(
+        `${progressLabel} ${chalk.green("Indexing")} ${chalk.bold(
+          relativePath,
+        )} ${chalk.dim(`(${chunks.length} chunks)`)}`,
+      );
 
-      const docs: string[] = [];
-      const ids: string[] = [];
-      const headings: string[] = [];
-      const hashes: string[] = [];
+      const chunkTexts: string[] = [];
+      const chunkIds: string[] = [];
+      const chunkHeadings: string[] = [];
+      const chunkHashes: string[] = [];
 
-      for (let i = 0; i < chunks.length; i++) {
-        const text = chunks[i]!.text;
-        docs.push(text);
-        ids.push(`${rel}:${i}`);
-        headings.push(chunks[i]!.heading);
-        hashes.push(sha256(text));
+      for (let chunkIndex = 0; chunkIndex < chunks.length; chunkIndex++) {
+        const chunk = chunks[chunkIndex]!;
+        const chunkTextValue = chunk.text;
+        chunkTexts.push(chunkTextValue);
+        chunkIds.push(`${relativePath}:${chunkIndex}`);
+        chunkHeadings.push(chunk.heading);
+        chunkHashes.push(sha256(chunkTextValue));
       }
 
       // Embed + upsert in batches to keep requests bounded.
-      for (let i = 0; i < docs.length; i += BATCH) {
-        const batchDocs = docs.slice(i, i + BATCH);
-        const batchIds = ids.slice(i, i + BATCH);
-        const batchHeadings = headings.slice(i, i + BATCH);
-        const batchHashes = hashes.slice(i, i + BATCH);
+      for (
+        let batchStart = 0;
+        batchStart < chunkTexts.length;
+        batchStart += EMBED_BATCH_SIZE
+      ) {
+        const batchChunkTexts = chunkTexts.slice(
+          batchStart,
+          batchStart + EMBED_BATCH_SIZE,
+        );
+        const batchChunkIds = chunkIds.slice(
+          batchStart,
+          batchStart + EMBED_BATCH_SIZE,
+        );
+        const batchChunkHeadings = chunkHeadings.slice(
+          batchStart,
+          batchStart + EMBED_BATCH_SIZE,
+        );
+        const batchChunkHashes = chunkHashes.slice(
+          batchStart,
+          batchStart + EMBED_BATCH_SIZE,
+        );
 
-        const embs = await ollamaEmbed(batchDocs, {
+        const embeddings = await ollamaEmbed(batchChunkTexts, {
           ollamaUrl: OLLAMA_URL,
           model: EMBED_MODEL,
         });
 
-        const rows = batchDocs.map((text, j) => ({
-          chunkId: batchIds[j]!,
-          path: rel,
-          chunkIndex: i + j,
-          heading: batchHeadings[j]!,
-          mtime,
-          hash: batchHashes[j]!,
-          text,
-          embedding: embs[j]!,
+        const chunkRecords = batchChunkTexts.map((chunkTextValue, batchIndex) => ({
+          chunkId: batchChunkIds[batchIndex]!,
+          path: relativePath,
+          chunkIndex: batchStart + batchIndex,
+          heading: batchChunkHeadings[batchIndex]!,
+          mtime: modifiedTimeSeconds,
+          hash: batchChunkHashes[batchIndex]!,
+          text: chunkTextValue,
+          embedding: embeddings[batchIndex]!,
         }));
-        store.upsertChunks(rows);
+        vectorStore.upsertChunks(chunkRecords);
       }
 
       stats.processedFiles++;
       stats.chunksUpserted += chunks.length;
 
       // Delete stale chunks if file shrank.
-      const prevCount = prev?.chunkCount ?? 0;
-      if (prevCount > chunks.length) {
-        const stale = [];
-        for (let i = chunks.length; i < prevCount; i++) {
-          stale.push(`${rel}:${i}`);
+      const previousChunkCount = previousState?.chunkCount ?? 0;
+      if (previousChunkCount > chunks.length) {
+        const staleChunkIds: string[] = [];
+        for (
+          let chunkIndex = chunks.length;
+          chunkIndex < previousChunkCount;
+          chunkIndex++
+        ) {
+          staleChunkIds.push(`${relativePath}:${chunkIndex}`);
         }
-        store.deleteChunksByIds(stale);
-        stats.chunksDeleted += stale.length;
+        vectorStore.deleteChunksByIds(staleChunkIds);
+        stats.chunksDeleted += staleChunkIds.length;
       }
 
-      store.saveFileState(rel, { mtime, chunkCount: chunks.length });
+      vectorStore.saveFileState(relativePath, {
+        mtime: modifiedTimeSeconds,
+        chunkCount: chunks.length,
+      });
     }
 
     // Handle deleted files by removing their lingering chunks.
-    for (const rel of Object.keys(state)) {
-      if (seen.has(rel)) continue;
-      const prevCount = state[rel]!.chunkCount;
-      console.log(`Removing deleted file ${rel} (${prevCount} chunks)...`);
-      const stale = [];
-      for (let i = 0; i < prevCount; i++) stale.push(`${rel}:${i}`);
-      store.deleteChunksByIds(stale);
-      store.deleteFileState(rel);
+    for (const relativePath of Object.keys(fileState)) {
+      if (seenFiles.has(relativePath)) continue;
+      const previousChunkCount = fileState[relativePath]!.chunkCount;
+      console.log(
+        `${chalk.red("Removing")} ${chalk.bold(relativePath)} ${chalk.dim(
+          `(${previousChunkCount} chunks)`,
+        )}`,
+      );
+      const staleChunkIds: string[] = [];
+      for (let chunkIndex = 0; chunkIndex < previousChunkCount; chunkIndex++) {
+        staleChunkIds.push(`${relativePath}:${chunkIndex}`);
+      }
+      vectorStore.deleteChunksByIds(staleChunkIds);
+      vectorStore.deleteFileState(relativePath);
       stats.deletedFiles++;
-      stats.chunksDeleted += stale.length;
+      stats.chunksDeleted += staleChunkIds.length;
     }
   } finally {
-    store.close();
+    vectorStore.close();
   }
 
-  const duration = ((Date.now() - start) / 1000).toFixed(1);
-  console.log("Indexing summary:");
-  console.log(`  Files processed: ${stats.processedFiles}`);
-  console.log(`  Files skipped (unchanged): ${stats.skippedFiles}`);
-  console.log(`  Files removed: ${stats.deletedFiles}`);
-  console.log(`  Chunks upserted: ${stats.chunksUpserted}`);
-  console.log(`  Chunks deleted: ${stats.chunksDeleted}`);
-  console.log(`  Duration: ${duration}s`);
+  const durationSeconds = ((Date.now() - startTime) / 1000).toFixed(1);
+  console.log("");
+  console.log(chalk.bold("Indexing summary:"));
+  console.log(`  ${chalk.green("Files processed:")} ${stats.processedFiles}`);
+  console.log(
+    `  ${chalk.yellow("Files skipped (unchanged):")} ${stats.skippedFiles}`,
+  );
+  console.log(`  ${chalk.red("Files removed:")} ${stats.deletedFiles}`);
+  console.log(`  ${chalk.green("Chunks upserted:")} ${stats.chunksUpserted}`);
+  console.log(`  ${chalk.red("Chunks deleted:")} ${stats.chunksDeleted}`);
+  console.log(`  ${chalk.cyan("Duration:")} ${durationSeconds}s`);
 }
 
-main().catch((e) => {
-  console.error(e);
+main().catch((error) => {
+  console.error(error);
   process.exit(1);
 });
