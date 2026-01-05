@@ -1,6 +1,6 @@
 import { execSync } from "node:child_process";
 import * as path from "node:path";
-import { iterMarkdownFiles } from "../index/util";
+import { iterVaultMarkdown } from "../core/fs/vault";
 import { chalk, logger } from "../logger";
 import { resolveWritablePath } from "./writeback";
 
@@ -17,7 +17,8 @@ async function main() {
   logger.info(chalk.cyan(`Tagging all notes under: ${directoryPath}`));
 
   let count = 0;
-  for await (const filePath of iterMarkdownFiles(directoryPath)) {
+  for await (const file of iterVaultMarkdown(directoryPath)) {
+    const filePath = file.absolute;
     count++;
     logger.info(chalk.dim(`Tagging note ${count}: ${filePath}`));
     try {

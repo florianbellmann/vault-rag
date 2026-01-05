@@ -80,6 +80,7 @@ export function fuseCandidates(
   const scores = new Map<string, number>();
   for (let index = 0; index < vectorScores.length; index++) {
     const candidate = vectorScores[index];
+    if (!candidate) continue;
     const contribution = weights.vector / (1 + index);
     scores.set(
       candidate.chunk.chunkId,
@@ -88,6 +89,7 @@ export function fuseCandidates(
   }
   for (let index = 0; index < lexicalScores.length; index++) {
     const candidate = lexicalScores[index];
+    if (!candidate) continue;
     const contribution = weights.lexical / (1 + index);
     scores.set(
       candidate.chunk.chunkId,

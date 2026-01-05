@@ -38,7 +38,7 @@ export function parseFrontmatter(content: string): ParsedFrontmatter {
   const processedFrontmatter = frontmatterLines.map((line) => {
     const match = line.match(/^(\s*)-\s+#?(.*)$/);
     if (match && line.trim().startsWith("- #")) {
-      const [, indent, rest] = match;
+      const [, indent, rest = ""] = match;
       return `${indent}- "#${rest.trim()}"`;
     }
     return line;

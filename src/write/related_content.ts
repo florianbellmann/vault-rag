@@ -65,6 +65,10 @@ async function main() {
   const [noteEmbedding] = await embedder.embed([
     { id: "note", text: truncated },
   ]);
+  if (!noteEmbedding) {
+    logger.error("Failed to embed note for related content.");
+    process.exit(1);
+  }
 
   const vectorStore = createVectorStore(config.paths.database);
   let candidates = [];

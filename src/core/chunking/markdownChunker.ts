@@ -147,9 +147,10 @@ function buildChunkDrafts(
     }
 
     // Start of a chunk needs to inherit overlap text if available and not yet injected.
-    if (chunkBlocks.length === 0 && overlapBuffer) {
-      chunkBlocks.push(overlapBuffer);
-      chunkTokens += overlapBuffer.tokens;
+    if (chunkBlocks.length === 0 && overlapBuffer !== null) {
+      const buffer: MarkdownBlock = overlapBuffer;
+      chunkBlocks.push(buffer);
+      chunkTokens += buffer.tokens;
       overlapBuffer = null;
     }
 

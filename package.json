@@ -18,6 +18,7 @@
     "enrich": "bun run src/write/enrich_note.ts",
     "enrich:all": "bun run src/write/enrich_all.ts",
     "lint": "bunx @biomejs/biome lint .",
+    "lint:types": "tsc --noEmit",
     "format": "bunx @biomejs/biome format --write .",
     "check": "bunx @biomejs/biome check .",
     "sum:today": "bash -lc 'echo \"$OBSIDIAN_VAULT/Daily/$(date +%F).md\"'",

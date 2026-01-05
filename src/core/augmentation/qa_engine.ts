@@ -29,6 +29,9 @@ export class AnswerEngine {
     const [questionEmbedding] = await this.embedder.embed([
       { id: "question", text: question },
     ]);
+    if (!questionEmbedding) {
+      throw new Error("Failed to embed question.");
+    }
     let retrieved = await this.retriever.retrieve(
       question,
       questionEmbedding.embedding,
@@ -45,6 +48,7 @@ export class AnswerEngine {
         const [rewriteEmbedding] = await this.embedder.embed([
           { id: `rewrite-${rewrite}`, text: rewrite },
         ]);
+        if (!rewriteEmbedding) continue;
         const rewriteResults = await this.retriever.retrieve(
           rewrite,
           rewriteEmbedding.embedding,
@@ -69,6 +73,7 @@ export class AnswerEngine {
         const [followEmbedding] = await this.embedder.embed([
           { id: `gap-${followUp}`, text: followUp },
         ]);
+        if (!followEmbedding) continue;
         const followResults = await this.retriever.retrieve(
           followUp,
           followEmbedding.embedding,
