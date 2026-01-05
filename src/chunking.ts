@@ -1,8 +1,10 @@
+// Helpers for turning Markdown into bounded-length chunks for embedding.
 export type Chunk = {
   heading: string;
   text: string;
 };
 
+// Splits markdown into sections keyed by the latest markdown heading.
 export function splitByHeadings(
   md: string,
 ): Array<{ heading: string; content: string }> {
@@ -39,6 +41,7 @@ export function splitByHeadings(
   return out;
 }
 
+// Splits a block of text into string slices capped at maxChars.
 export function chunkText(s: string, maxChars = 1800): string[] {
   const t = s.trim();
   if (!t) return [];
@@ -49,6 +52,7 @@ export function chunkText(s: string, maxChars = 1800): string[] {
   return chunks;
 }
 
+// Builds embed-ready chunks by combining headings and bounded content slices.
 export function makeChunks(md: string, maxChars = 1800): Chunk[] {
   const sections = splitByHeadings(md);
   const chunks: Chunk[] = [];
