@@ -43,6 +43,7 @@ Scripts
 | `bun run ask ...`   | Retrieve + answer a question                     |
 | `bun run ask:debug` | Same as `ask` but prints retrieval/prompt debug  |
 | `bun run summarize <path>` | Append AI summary/recs to a note          |
+| `bun run tag <path>`       | Append AI-generated universal tags        |
 
 Environment Variables
 ---------------------
@@ -56,6 +57,8 @@ See `.env.example` for the full list:
 - `EMBED_BATCH`, `CHUNK_MAX_CHARS`, `TOP_K`: optional tuning knobs.
 - `WRITEBACK_ROOT`: directory where writeback scripts may modify notes (defaults to `OBSIDIAN_VAULT`).
 - `SUMMARY_MIN_CHARS`: minimum non-AI characters required before summarizing a note (default 200).
+- `TAG_MIN_CHARS`: minimum characters before tagging a note (default 120).
+- `TAG_MAX`: maximum number of tags the agent should append (default 6).
 
 Architecture
 ------------
@@ -65,6 +68,8 @@ Architecture
 - `src/ask.ts`: query/QA helper built on the vector store.
 - `src/write/writeback.ts`: safe write helpers + AI block markers.
 - `src/write/summarize_note.ts`: uses writeback + chat model to append summaries.
+- `src/write/tag_note.ts`: generates universal tags with Ollama and appends them.
+- `src/write/tagging.ts`: helper utilities for parsing/normalizing tag output.
 - `src/index/chunking.ts`, `src/index/util.ts`, `src/ollama.ts`, `src/similarity.ts`: shared helpers for chunk generation, file traversal, Ollama calls, and cosine similarity.
 
 The abstraction layer keeps the indexer/question answering logic storage-agnostic, so you can swap in a different vector store (e.g., ChromaDB) later by implementing the same interface.
@@ -80,4 +85,4 @@ AI Writebacks
 <!-- AI:END -->
 ```
 
-`makeChunks` strips every block between those markers before chunking, ensuring summaries/recommendations never get fed back into the retrieval corpus.
+`makeChunks` strips every block between those markers before chunking, ensuring AI summaries, recommendations, and other generated notes never get fed back into the retrieval corpus. Tagging writes place the normalized tags into frontmatter (`tags:` list) so Obsidian can surface them globally.

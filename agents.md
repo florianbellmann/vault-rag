@@ -41,4 +41,4 @@ Extending Agents
 - **New Vector Store**: implement `VectorStore` in `src/db.ts` (e.g., wrap ChromaDB) and point `createVectorStore` to it.
 - **Alternate Embedders/LLMs**: update `src/ollama.ts` or add a new client module. The rest of the system only depends on the `ollamaEmbed` / `ollamaGenerate` signatures.
 - **Pipelining**: Because both agents are plain scripts, you can run the indexer on a schedule and trigger the QA agent via CLI, HTTP wrapper, Raycast command, etc.
-- **Writeback Agents**: `src/write/writeback.ts` and `src/write/summarize_note.ts` encapsulate safe note updates. All AI output is wrapped with `<!-- AI:BEGIN --> ... <!-- AI:END -->` markers, which the indexer automatically strips before chunking.
+- **Writeback Agents**: `src/write/writeback.ts`, `src/write/summarize_note.ts`, and `src/write/tag_note.ts` encapsulate safe note updates. All AI output is wrapped with `<!-- AI:BEGIN --> ... <!-- AI:END -->` markers, which the indexer automatically strips before chunking. The summarize agent produces recap + recommendations, while the tag agent emits universal tags (#project-management, #health, etc.) to help with organization.
