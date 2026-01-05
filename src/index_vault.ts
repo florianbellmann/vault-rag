@@ -1,9 +1,9 @@
 import * as path from "node:path";
-import chalk from "chalk";
 import { createVectorStore } from "./db";
 import { iterMarkdownFiles, readText, sha256, mtimeSeconds } from "./util";
 import { makeChunks } from "./chunking";
 import { ollamaEmbed } from "./ollama";
+import { logger, chalk } from "./logger";
 
 // Simple indexer that walks an Obsidian vault, embeds Markdown chunks,
 // and writes them into the configured vector store.
@@ -63,7 +63,7 @@ async function main() {
       const previousState = fileState[relativePath];
       if (previousState && previousState.mtime === modifiedTimeSeconds) {
         stats.skippedFiles++;
-        console.log(
+        logger.info(
           `${progressLabel} ${chalk.yellow("Skipping")} ${chalk.dim(
             relativePath,
           )} (unchanged)`,
@@ -75,7 +75,7 @@ async function main() {
       const chunks = makeChunks(markdown, CHUNK_MAX_CHAR_LENGTH);
       // Remove the prior chunk count (if any) so we can add the latest count later.
       stats.chunksTotal -= previousState?.chunkCount ?? 0;
-      console.log(
+      logger.info(
         `${progressLabel} ${chalk.green("Indexing")} ${chalk.bold(
           relativePath,
         )} ${chalk.dim(`(${chunks.length} chunks)`)}`,
@@ -165,7 +165,7 @@ async function main() {
     for (const relativePath of Object.keys(fileState)) {
       if (seenFiles.has(relativePath)) continue;
       const previousChunkCount = fileState[relativePath]!.chunkCount;
-      console.log(
+      logger.info(
         `${chalk.red("Removing")} ${chalk.bold(relativePath)} ${chalk.dim(
           `(${previousChunkCount} chunks)`,
         )}`,
@@ -185,20 +185,21 @@ async function main() {
   }
 
   const durationSeconds = ((Date.now() - startTime) / 1000).toFixed(1);
-  console.log("");
-  console.log(chalk.bold("Indexing summary:"));
-  console.log(`  ${chalk.green("Files processed:")} ${stats.processedFiles}`);
-  console.log(
+  logger.info(chalk.bold("Indexing summary:"));
+  logger.info(`  ${chalk.green("Files processed:")} ${stats.processedFiles}`);
+  logger.info(
     `  ${chalk.yellow("Files skipped (unchanged):")} ${stats.skippedFiles}`,
   );
-  console.log(`  ${chalk.red("Files removed:")} ${stats.deletedFiles}`);
-  console.log(`  ${chalk.green("Chunks upserted:")} ${stats.chunksUpserted}`);
-  console.log(`  ${chalk.red("Chunks deleted:")} ${stats.chunksDeleted}`);
-  console.log(`  ${chalk.cyan("Total chunks indexed:")} ${stats.chunksTotal}`);
-  console.log(`  ${chalk.cyan("Duration:")} ${durationSeconds}s`);
+  logger.info(`  ${chalk.red("Files removed:")} ${stats.deletedFiles}`);
+  logger.info(`  ${chalk.green("Chunks upserted:")} ${stats.chunksUpserted}`);
+  logger.info(`  ${chalk.red("Chunks deleted:")} ${stats.chunksDeleted}`);
+  logger.info(
+    `  ${chalk.cyan("Total chunks indexed:")} ${stats.chunksTotal}`,
+  );
+  logger.info(`  ${chalk.cyan("Duration:")} ${durationSeconds}s`);
 }
 
 main().catch((error) => {
-  console.error(error);
+  logger.error("Indexing failed:", error);
   process.exit(1);
 });

@@ -6,11 +6,11 @@
   "scripts": {
     "index": "bun run src/index_vault.ts",
     "reset": "rm vault_index.sqlite*",
-    "reindex": "bun run reset ; bun run index",
+    "reindex": "bun run test && bun run reset ; bun run index",
     "ask": "bun run src/ask.ts",
     "ask:debug": "DEBUG=1 bun run src/ask.ts",
     "summarize": "bun run src/summarize_note.ts",
-    "today": "bash -lc 'echo \"$OBSIDIAN_VAULT/Daily/$(date +%F).md\"'",
+    "sum:today": "bash -lc 'echo \"$OBSIDIAN_VAULT/Daily/$(date +%F).md\"'",
     "test": "bun test"
   },
   "dependencies": {

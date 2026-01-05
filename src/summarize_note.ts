@@ -2,6 +2,7 @@ import { stripAiBlocks } from "./ai_markers";
 import { readText } from "./util";
 import { ollamaGenerate } from "./ollama";
 import { appendAiBlock, resolveWritablePath } from "./writeback";
+import { logger, chalk } from "./logger";
 
 const OLLAMA_URL = process.env.OLLAMA_URL;
 const CHAT_MODEL = process.env.CHAT_MODEL;
@@ -12,33 +13,46 @@ const MIN_SUMMARY_CHARS = Number(process.env.SUMMARY_MIN_CHARS ?? "200");
 async function main() {
   const targetArg = process.argv[2];
   if (!targetArg) {
-    console.error("Usage: bun run src/summarize_note.ts <relative-or-absolute-path>");
+    logger.error(
+      "Usage: bun run src/summarize_note.ts <relative-or-absolute-path>",
+    );
     process.exit(2);
   }
 
   const absolutePath = resolveWritablePath(targetArg);
+  logger.info(chalk.cyan(`Summarizing note: ${absolutePath}`));
   let noteContent = "";
   try {
     noteContent = await readText(absolutePath);
   } catch (error) {
     if ((error as NodeJS.ErrnoException).code === "ENOENT") {
-      console.error(`Note not found: ${absolutePath}`);
+      logger.error(`Note not found: ${absolutePath}`);
       process.exit(1);
     }
     throw error;
   }
+  logger.debug(
+    `Original length: ${noteContent.length} chars (with AI blocks included).`,
+  );
 
   const cleanedContent = stripAiBlocks(noteContent).trim();
   if (!cleanedContent) {
-    console.error("Note has no user-authored content to summarize.");
+    logger.warn(
+      "Note has no user-authored content after removing AI blocks; skipping.",
+    );
     process.exit(1);
   }
   if (cleanedContent.length < MIN_SUMMARY_CHARS) {
-    console.error(
+    logger.warn(
       `Note only has ${cleanedContent.length} characters (< ${MIN_SUMMARY_CHARS}); skipping summary.`,
     );
     process.exit(0);
   }
+  logger.info(
+    chalk.green(
+      `Generating summary for ${cleanedContent.length} characters of user content...`,
+    ),
+  );
 
   const prompt = [
     "You are an assistant that summarizes Obsidian daily notes.",
@@ -60,17 +74,20 @@ async function main() {
     ollamaUrl: OLLAMA_URL,
     model: CHAT_MODEL,
   });
+  logger.debug("Prompt sent to chat model:");
+  logger.debug(prompt);
 
   const timestamp = new Date().toISOString();
   const blockTitle = `AI Summary (${timestamp})`;
+  logger.info(chalk.cyan("Writing summary block to note..."));
   await appendAiBlock(targetArg, {
     title: blockTitle,
     body: response.trim(),
   });
-  console.log(`Appended AI summary to ${absolutePath}`);
+  logger.info(chalk.green(`Appended AI summary to ${absolutePath}`));
 }
 
 main().catch((error) => {
-  console.error(error);
+  logger.error(error);
   process.exit(1);
 });

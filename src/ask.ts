@@ -2,6 +2,7 @@ import { createVectorStore } from "./db";
 import type { ChunkRecord } from "./db";
 import { cosineSimilarity } from "./similarity";
 import { ollamaEmbed, ollamaGenerate } from "./ollama";
+import { logger, chalk } from "./logger";
 
 // Models + storage configuration.
 const OLLAMA_URL = process.env.OLLAMA_URL;
@@ -10,21 +11,14 @@ const CHAT_MODEL = process.env.CHAT_MODEL;
 const DB_PATH = process.env.DB_PATH ?? "./vault_index.sqlite";
 
 const TOP_RESULT_COUNT = Number(process.env.TOP_K ?? "8");
-const DEBUG_ENABLED = process.env.DEBUG === "1" || process.env.DEBUG === "true";
-const log = {
-  debug: (...messages: unknown[]) => {
-    if (!DEBUG_ENABLED) return;
-    console.debug(...messages);
-  },
-};
 
 async function main() {
   const question = process.argv.slice(2).join(" ").trim();
   if (!question) {
-    console.error("Usage: bun run src/ask.ts <question>");
+    logger.error("Usage: bun run src/ask.ts <question>");
     process.exit(2);
   }
-  log.debug(`[ask] Question: ${question}`);
+  logger.debug(`[ask] Question: ${question}`);
 
   const [questionEmbedding] = await ollamaEmbed([question], {
     ollamaUrl: OLLAMA_URL,
@@ -35,7 +29,7 @@ async function main() {
   let chunkRecords: ChunkRecord[] = [];
   try {
     chunkRecords = vectorStore.getAllChunks();
-    log.debug(`[ask] Loaded ${chunkRecords.length} chunks from store.`);
+    logger.debug(`[ask] Loaded ${chunkRecords.length} chunks from store.`);
   } finally {
     vectorStore.close();
   }
@@ -48,10 +42,10 @@ async function main() {
 
   scoredChunks.sort((left, right) => right.score - left.score);
   const topChunks = scoredChunks.slice(0, TOP_RESULT_COUNT);
-  log.debug("[ask] Top candidates by cosine similarity:");
+  logger.debug("[ask] Top candidates by cosine similarity:");
   for (const [index, entry] of topChunks.entries()) {
     const percentScore = (entry.score * 100).toFixed(2);
-    log.debug(
+    logger.debug(
       `  ${index + 1}. ${entry.chunkRecord.path} (${entry.chunkRecord.heading}) -> ${percentScore}%`,
     );
   }
@@ -83,20 +77,21 @@ async function main() {
     ollamaUrl: OLLAMA_URL,
     model: CHAT_MODEL,
   });
-  log.debug("[ask] Prompt sent to chat model:\n");
-  log.debug(prompt);
+  logger.debug("[ask] Prompt sent to chat model:");
+  logger.debug(prompt);
 
-  console.log(answer.trim());
-  console.log("\nSources:");
+  logger.info(chalk.bold("Answer:"));
+  logger.info(chalk.white(answer.trim()));
+  logger.info(chalk.bold("Sources:"));
   const uniqueSourcePaths = [
     ...new Set(topChunks.map((entry) => entry.chunkRecord.path)),
   ];
   for (const sourcePath of uniqueSourcePaths) {
-    console.log(`- ${sourcePath}`);
+    logger.info(chalk.dim(`- ${sourcePath}`));
   }
 }
 
 main().catch((error) => {
-  console.error(error);
+  logger.error(error);
   process.exit(1);
 });
