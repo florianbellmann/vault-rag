@@ -4,13 +4,17 @@ import type { Embedder } from "../embedding";
 import { fileMtimeSeconds, iterVaultMarkdown, readMarkdown } from "../fs/vault";
 import type { StoredChunk, VectorStore } from "../store";
 import type { ChunkRecord, GlobalConfig } from "../types";
+import { formatDuration } from "../../utils/formatDuration";
 
 export interface IndexStats {
+  totalFiles: number;
   processed: number;
   skipped: number;
   removed: number;
+  failed: number;
   chunksUpserted: number;
   chunksDeleted: number;
+  durationMs: number;
 }
 
 /**
@@ -24,43 +28,69 @@ export class VaultIndexer {
   ) {}
 
   async run(): Promise<IndexStats> {
+    const startTime = Date.now();
     const stats: IndexStats = {
+      totalFiles: 0,
       processed: 0,
       skipped: 0,
       removed: 0,
+      failed: 0,
       chunksUpserted: 0,
       chunksDeleted: 0,
+      durationMs: 0,
     };
     const seenPaths = new Set<string>();
     const fileStates = this.store.loadFileStates();
-    let fileIndex = 0;
+    const files: Array<{ absolute: string; relative: string }> = [];
     for await (const file of iterVaultMarkdown(this.config.paths.vault)) {
+      files.push(file);
+    }
+    stats.totalFiles = files.length;
+    let fileIndex = 0;
+    for (const file of files) {
       fileIndex++;
-      seenPaths.add(file.relative);
-      const mtime = await fileMtimeSeconds(file.absolute);
-      const previous = fileStates[file.relative];
-      if (previous && previous.mtime === mtime) {
-        stats.skipped++;
-        logger.debug(`Skipping ${file.relative} (unchanged)`);
-        continue;
-      }
+      const noteStart = Date.now();
+      try {
+        seenPaths.add(file.relative);
+        const mtime = await fileMtimeSeconds(file.absolute);
+        const previous = fileStates[file.relative];
+        if (previous && previous.mtime === mtime) {
+          stats.skipped++;
+          logger.info(
+            `[${fileIndex}/${stats.totalFiles}] Skipping ${file.relative} (unchanged) in ${formatDuration(
+              Date.now() - noteStart,
+            )}`,
+          );
+          continue;
+        }
 
-      const markdown = await readMarkdown(file.absolute);
-      const chunks = chunkMarkdown(
-        {
-          filePath: file.relative,
-          markdown,
-          mtime,
-        },
-        this.config.chunking,
-      );
-      const deletedChunks = await this.persistFile(file.relative, chunks);
-      stats.processed++;
-      stats.chunksUpserted += chunks.length;
-      stats.chunksDeleted += deletedChunks;
-      logger.info(
-        `[${fileIndex}] Indexed ${file.relative} (${chunks.length} chunks)`,
-      );
+        const markdown = await readMarkdown(file.absolute);
+        const chunks = chunkMarkdown(
+          {
+            filePath: file.relative,
+            markdown,
+            mtime,
+          },
+          this.config.chunking,
+        );
+        const deletedChunks = await this.persistFile(file.relative, chunks);
+        stats.processed++;
+        stats.chunksUpserted += chunks.length;
+        stats.chunksDeleted += deletedChunks;
+        logger.info(
+          `[${fileIndex}/${stats.totalFiles}] Indexed ${file.relative} (${chunks.length} chunks) in ${formatDuration(
+            Date.now() - noteStart,
+          )}`,
+        );
+      } catch (error) {
+        stats.failed++;
+        logger.error(
+          `[${fileIndex}/${stats.totalFiles}] Failed ${file.relative} after ${formatDuration(
+            Date.now() - noteStart,
+          )}:`,
+          error,
+        );
+      }
     }
     const removedPaths = this.store
       .listIndexedPaths()
@@ -72,6 +102,7 @@ export class VaultIndexer {
       stats.chunksDeleted += chunkCount;
       logger.warn(`Removed ${path} (file deleted)`);
     }
+    stats.durationMs = Date.now() - startTime;
     return stats;
   }
 

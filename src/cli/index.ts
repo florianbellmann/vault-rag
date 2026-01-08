@@ -3,6 +3,7 @@ import { OllamaEmbedder } from "../core/embedding";
 import { VaultIndexer } from "../core/indexer";
 import { createVectorStore } from "../core/store";
 import { logger, setLogLevel } from "../logger";
+import { formatDuration } from "../utils/formatDuration";
 
 async function main() {
   const config = loadConfig();
@@ -14,7 +15,9 @@ async function main() {
     const indexer = new VaultIndexer(config, embedder, store);
     const stats = await indexer.run();
     logger.info(
-      `Indexed ${stats.processed} files, skipped ${stats.skipped}, removed ${stats.removed}`,
+      `Indexed ${stats.processed} files, skipped ${stats.skipped}, removed ${stats.removed}, failed ${stats.failed}, chunks upserted ${stats.chunksUpserted}, chunks deleted ${stats.chunksDeleted}, total ${formatDuration(
+        stats.durationMs,
+      )}`,
     );
   } finally {
     store.close();
