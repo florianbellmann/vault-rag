@@ -81,6 +81,7 @@ export interface PromptTemplates {
   summarization: string;
   tagging: string;
   related: string;
+  rework: string;
   reranker: string;
   query_rewrite: string;
   iterative_gap: string;

@@ -25,6 +25,35 @@ export async function summarizeContent(
 }
 
 /**
+ * Rewrites a note to improve chunking quality without adding new information.
+ */
+export async function reworkContent(
+  path: string,
+  title: string,
+  context: string,
+  createdAt: string,
+  modifiedAt: string,
+  config: GlobalConfig,
+  ollamaUrl: string,
+): Promise<string> {
+  const prompt = renderPrompt(config.prompts.rework, {
+    path,
+    title,
+    context,
+    created_at: createdAt,
+    modified_at: modifiedAt,
+  });
+  return ollamaGenerate(prompt, {
+    model: config.models.llm_model,
+    ollamaUrl,
+    options: {
+      temperature: config.models.temperature,
+      max_tokens: config.models.max_tokens,
+    },
+  });
+}
+
+/**
  * Produces normalized universal tags for a note.
  */
 export async function generateTags(
