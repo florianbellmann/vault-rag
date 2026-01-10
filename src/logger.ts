@@ -28,26 +28,26 @@ function formatMessage(
 function log(
   levelLabel: string,
   colorize: ChalkColorizer,
-  consoleMethod: (message?: unknown, ...optionalParams: unknown[]) => void,
+  stream: NodeJS.WriteStream,
   messages: unknown[],
 ) {
-  consoleMethod(formatMessage(levelLabel, colorize, messages));
+  stream.write(`${formatMessage(levelLabel, colorize, messages)}\n`);
 }
 
 export const logger = {
   info: (...messages: unknown[]) => {
     if (levelPriority[currentLevel] > levelPriority.info) return;
-    log("INFO", chalkModule.cyan, console.log, messages);
+    log("INFO", chalkModule.cyan, process.stdout, messages);
   },
   warn: (...messages: unknown[]) => {
     if (levelPriority[currentLevel] > levelPriority.warn) return;
-    log("WARN", chalkModule.yellow, console.warn, messages);
+    log("WARN", chalkModule.yellow, process.stderr, messages);
   },
   error: (...messages: unknown[]) =>
-    log("ERROR", chalkModule.red, console.error, messages),
+    log("ERROR", chalkModule.red, process.stderr, messages),
   debug: (...messages: unknown[]) => {
     if (levelPriority[currentLevel] > levelPriority.debug) return;
-    log("DEBUG", chalkModule.magenta, console.debug, messages);
+    log("DEBUG", chalkModule.magenta, process.stdout, messages);
   },
 };
 

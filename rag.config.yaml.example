@@ -117,6 +117,8 @@ prompts:
     - If required sections already exist, update them; do not duplicate.
     - If you are unsure or lack information, say so explicitly in the note.
     - Add frontmatter to files that do not have it. Use file specs/stats to pick the right date.
+    - If you find German content in a file, make all your changes also in German.
+    - If you find quotes make sure they are still present and properly formatted.
 
     ## Structure guidance
 
