@@ -119,6 +119,11 @@ prompts:
     - Add frontmatter to files that do not have it. Use file specs/stats to pick the right date.
     - If you find German content in a file, make all your changes also in German.
     - If you find quotes make sure they are still present and properly formatted.
+    - Never add your own prompt rules or instructions to the file.
+    - If you find markdownlint rules or disabled rules, do not change them. Keep them
+    - Don't add empty tabs or spaces at the end of lines
+    - If you find notes with a lot of date headlines like "### 2023‑07‑28", those are meeting notes files. Each heading marks a diferent meeting that happend. Keep those files structurally intact and dont drop infos.
+
 
     ## Structure guidance
 
