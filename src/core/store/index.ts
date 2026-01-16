@@ -225,15 +225,22 @@ class SqliteVectorStore implements VectorStore {
     filters?: RetrievalFilters,
   ): Array<{ chunk: StoredChunk; score: number }> {
     if (!query.trim()) return [];
-    const rows = this.database
-      .query(
-        `SELECT chunk_id, bm25(chunk_fts) AS score
-         FROM chunk_fts
-         WHERE chunk_fts MATCH ?
-         ORDER BY score
-         LIMIT ?`,
-      )
-      .all(query, limit) as Array<{ chunk_id: string; score: number }>;
+    const ftsQuery = toFtsQuery(query);
+    if (!ftsQuery) return [];
+    let rows: Array<{ chunk_id: string; score: number }> = [];
+    try {
+      rows = this.database
+        .query(
+          `SELECT chunk_id, bm25(chunk_fts) AS score
+           FROM chunk_fts
+           WHERE chunk_fts MATCH ?
+           ORDER BY score
+           LIMIT ?`,
+        )
+        .all(ftsQuery, limit) as Array<{ chunk_id: string; score: number }>;
+    } catch {
+      return [];
+    }
     if (rows.length === 0) return [];
     const chunkIds = rows.map((row) => row.chunk_id);
     const placeholders = chunkIds.map(() => "?").join(",");
@@ -263,6 +270,14 @@ class SqliteVectorStore implements VectorStore {
     const closable = this.database as Database & { close?: () => void };
     closable.close?.();
   }
+}
+
+function toFtsQuery(input: string): string {
+  const tokens = input.match(/[A-Za-z0-9_]+/g) ?? [];
+  if (tokens.length === 0) return "";
+  return tokens
+    .map((token) => `"${token.replace(/"/g, '""')}"`)
+    .join(" AND ");
 }
 
 type ChunkRow = {
