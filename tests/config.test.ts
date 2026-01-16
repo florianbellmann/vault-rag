@@ -61,6 +61,8 @@ prompts:
   summarization: "{{context}}"
   tagging: "{{context}}"
   related: "{{context}}"
+  journal: "{{context}}"
+  rework: "{{context}}"
   reranker: "{{chunks}}"
   query_rewrite: "{{question}}"
   iterative_gap: "{{context}}"

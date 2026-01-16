@@ -82,6 +82,7 @@ export interface PromptTemplates {
   tagging: string;
   related: string;
   rework: string;
+  journal: string;
   reranker: string;
   query_rewrite: string;
   iterative_gap: string;

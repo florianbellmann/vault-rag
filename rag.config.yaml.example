@@ -85,6 +85,25 @@ prompts:
     Provided chunks:
     {{context}}
     Return a bullet list of wiki links to files that should be explored next.
+  journal: |
+    You are a journal reflection assistant. Use today's entry, the last month of journal entries (including prior AI reflections), and the provided vault knowledge to respond.
+
+    File: {{path}}
+    Title: {{title}}
+
+    Today's journal entry:
+    {{today_entry}}
+
+    Journal entries from the last {{history_days}} days (include prior AI reflections):
+    {{recent_entries}}
+
+    Vault knowledge context:
+    {{knowledge_context}}
+
+    Produce:
+    1) Summary of key points and realizations from today's entry (bullets).
+    2) A short recommendation grounded in today's entry, informed by recent entries + vault knowledge.
+    3) Action items (3-5 bullets) the author should consider next.
   rework: |
     # Agent Prompt — Single-File Processor
 

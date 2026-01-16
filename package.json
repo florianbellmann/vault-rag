@@ -15,6 +15,7 @@
     "tag:all": "bun run src/write/tag_all.ts",
     "related": "bun run src/write/related_content.ts",
     "related:all": "bun run src/write/related_all.ts",
+    "journal": "bun run src/write/journal.ts",
     "enrich": "bun run src/write/enrich_note.ts",
     "enrich:all": "bun run src/write/enrich_all.ts",
     "rework": "bun run src/write/rework_note.ts",

@@ -103,6 +103,34 @@ export async function generateRelatedContent(
   });
 }
 
+/**
+ * Generates a journal reflection based on today's entry, recent history, and vault context.
+ */
+export async function generateJournalReflection(
+  path: string,
+  title: string,
+  todayEntry: string,
+  recentEntries: string,
+  knowledgeContext: string,
+  historyDays: number,
+  config: GlobalConfig,
+  ollamaUrl: string,
+): Promise<string> {
+  const prompt = renderPrompt(config.prompts.journal, {
+    path,
+    title,
+    today_entry: todayEntry,
+    recent_entries: recentEntries,
+    knowledge_context: knowledgeContext,
+    history_days: historyDays,
+  });
+  return ollamaGenerate(prompt, {
+    model: config.models.llm_model,
+    ollamaUrl,
+    options: { temperature: config.models.temperature, max_tokens: 512 },
+  });
+}
+
 function parseTagCandidates(response: string): string[] {
   try {
     const parsed = JSON.parse(response) as string[];
