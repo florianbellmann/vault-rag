@@ -3,6 +3,7 @@ import type { Embedder } from "../embedding";
 import { renderPrompt } from "../prompts";
 import type { HybridRetriever } from "../retrieval";
 import type { GlobalConfig, RankedChunk, RetrievalFilters } from "../types";
+import { logger } from "../../logger";
 
 export interface AnswerResult {
   answer: string;
@@ -26,12 +27,14 @@ export class AnswerEngine {
     question: string,
     filters?: RetrievalFilters,
   ): Promise<AnswerResult> {
+    logger.debug("QA: embedding question");
     const [questionEmbedding] = await this.embedder.embed([
       { id: "question", text: question },
     ]);
     if (!questionEmbedding) {
       throw new Error("Failed to embed question.");
     }
+    logger.debug("QA: retrieving initial chunks");
     let retrieved = await this.retriever.retrieve(
       question,
       questionEmbedding.embedding,
@@ -39,16 +42,20 @@ export class AnswerEngine {
     );
 
     if (this.config.features.query_rewriting) {
+      logger.debug("QA: rewriting query");
       const rewrites = await rewriteQueries(
         question,
         this.config,
         this.ollamaUrl,
       );
+      logger.debug(`QA: ${rewrites.length} rewrite(s)`);
       for (const rewrite of rewrites) {
+        logger.debug(`QA: embedding rewrite "${rewrite}"`);
         const [rewriteEmbedding] = await this.embedder.embed([
           { id: `rewrite-${rewrite}`, text: rewrite },
         ]);
         if (!rewriteEmbedding) continue;
+        logger.debug(`QA: retrieving for rewrite "${rewrite}"`);
         const rewriteResults = await this.retriever.retrieve(
           rewrite,
           rewriteEmbedding.embedding,
@@ -59,6 +66,7 @@ export class AnswerEngine {
     }
 
     if (this.config.features.iterative_retrieval) {
+      logger.debug("QA: drafting follow-up queries");
       const packed = packContext(
         retrieved,
         this.config.retrieval.context_token_budget,
@@ -69,11 +77,14 @@ export class AnswerEngine {
         this.config,
         this.ollamaUrl,
       );
+      logger.debug(`QA: ${followUps.length} follow-up(s)`);
       for (const followUp of followUps) {
+        logger.debug(`QA: embedding follow-up "${followUp}"`);
         const [followEmbedding] = await this.embedder.embed([
           { id: `gap-${followUp}`, text: followUp },
         ]);
         if (!followEmbedding) continue;
+        logger.debug(`QA: retrieving for follow-up "${followUp}"`);
         const followResults = await this.retriever.retrieve(
           followUp,
           followEmbedding.embedding,
@@ -83,6 +94,7 @@ export class AnswerEngine {
       }
     }
 
+    logger.debug("QA: generating answer");
     const packed = packContext(
       retrieved,
       this.config.retrieval.context_token_budget,
@@ -118,7 +130,11 @@ async function rewriteQueries(
     ollamaUrl,
     options: { temperature: 0.2, max_tokens: 256 },
   });
-  return safeParseJsonArray(response);
+  const rewrites = safeParseJsonArray(response)
+    .map((entry) => entry.replace(/^["'`]+|["'`]+$/g, "").trim())
+    .filter(Boolean);
+  const deduped = [...new Set(rewrites)];
+  return deduped.slice(0, 4);
 }
 
 /**
@@ -224,15 +240,21 @@ function mergeChunks(base: RankedChunk[], extra: RankedChunk[]): RankedChunk[] {
 }
 
 function safeParseJsonArray(response: string): string[] {
+  const trimmed = response.trim();
+  const arrayMatch = trimmed.match(/\[[\s\S]*\]/);
+  const jsonCandidate = arrayMatch ? arrayMatch[0] : trimmed;
   try {
-    const parsed = JSON.parse(response.trim()) as string[];
+    const parsed = JSON.parse(jsonCandidate) as unknown;
     if (Array.isArray(parsed)) return parsed.map((item) => String(item));
   } catch {
     // fall back to naive splitting
   }
-  return response
+  return trimmed
+    .replace(/```(?:json)?/gi, "")
     .split("\n")
     .map((line) => line.trim())
+    .filter((line) => line && line !== "[" && line !== "]")
+    .map((line) => line.replace(/^[*-]\s*/, "").trim())
     .filter(Boolean);
 }
 

@@ -36,3 +36,4 @@ vault_index.sqlite
 vault_index.sqlite-shm
 vault_index.sqlite-wal
 rag.config.yaml
+eval.synthetic.json

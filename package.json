@@ -26,8 +26,10 @@
     "check": "bunx @biomejs/biome check .",
     "sum:today": "bash -lc 'echo \"$OBSIDIAN_VAULT/Daily/$(date +%F).md\"'",
     "test": "bun test",
+    "test:integration": "RUN_ASK_DEBUG_TEST=1 bun test",
     "rag:eval": "bun run src/cli/eval.ts",
-    "rag:hygiene": "bun run src/cli/hygiene.ts"
+    "rag:hygiene": "bun run src/cli/hygiene.ts",
+    "rag:synthetic": "bun run src/cli/synthetic.ts"
   },
   "dependencies": {
     "chalk": "^5.6.2",

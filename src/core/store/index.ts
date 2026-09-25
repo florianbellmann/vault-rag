@@ -45,6 +45,10 @@ export function createVectorStore(dbPath: string): VectorStore {
  */
 class SqliteVectorStore implements VectorStore {
   private database: Database;
+  private allChunksCache: StoredChunk[] | null = null;
+  private allChunksCacheExpiresAt = 0;
+  private static readonly ALL_CHUNKS_CACHE_TTL_MS =
+    24 * 60 * 60 * 1000;
 
   constructor(dbPath: string) {
     this.database = new Database(dbPath);
@@ -187,6 +191,7 @@ class SqliteVectorStore implements VectorStore {
         updateFileState.run(filePath, latestMtime, fileChunks.length, fileHash);
       }
     })();
+    this.clearAllChunksCache();
   }
 
   deleteChunksByIds(chunkIds: string[]): void {
@@ -202,6 +207,7 @@ class SqliteVectorStore implements VectorStore {
         deleteFts.run(chunkId);
       }
     })();
+    this.clearAllChunksCache();
   }
 
   deleteChunksForFile(filePath: string): void {
@@ -210,13 +216,24 @@ class SqliteVectorStore implements VectorStore {
       .all(filePath) as Array<{ chunk_id: string }>;
     this.deleteChunksByIds(chunkIds.map((row) => row.chunk_id));
     this.database.query("DELETE FROM files WHERE path = ?").run(filePath);
+    this.clearAllChunksCache();
   }
 
   listAllChunks(): StoredChunk[] {
+    if (
+      this.allChunksCache &&
+      Date.now() < this.allChunksCacheExpiresAt
+    ) {
+      return this.allChunksCache;
+    }
     const rows = this.database
       .query("SELECT * FROM chunks")
       .all() as ChunkRow[];
-    return rows.map(rowToChunk);
+    const chunks = rows.map(rowToChunk);
+    this.allChunksCache = chunks;
+    this.allChunksCacheExpiresAt =
+      Date.now() + SqliteVectorStore.ALL_CHUNKS_CACHE_TTL_MS;
+    return chunks;
   }
 
   lexicalSearch(
@@ -269,6 +286,11 @@ class SqliteVectorStore implements VectorStore {
   close(): void {
     const closable = this.database as Database & { close?: () => void };
     closable.close?.();
+  }
+
+  private clearAllChunksCache(): void {
+    this.allChunksCache = null;
+    this.allChunksCacheExpiresAt = 0;
   }
 }
 
